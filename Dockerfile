@@ -10,5 +10,13 @@ RUN go build -v -o /run-app .
 
 FROM debian:bookworm
 
+WORKDIR /app
+
+# Copiar el binario compilado
 COPY --from=builder /run-app /usr/local/bin/
+
+# Copiar templates y archivos estáticos
+COPY --from=builder /usr/src/app/templates ./templates
+COPY --from=builder /usr/src/app/static ./static
+
 CMD ["run-app"]

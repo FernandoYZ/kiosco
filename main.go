@@ -39,7 +39,7 @@ func main() {
 	routes.SetupRoutes(manejador)
 
 	// Iniciar servidor
-	puerto := ":3200"
+	puerto := config.ObtenerPuerto()
 	fmt.Printf("✓ Servidor iniciado en http://localhost%s\n", puerto)
 	fmt.Println("✓ Presiona Ctrl+C para detener el servidor")
 	fmt.Println()

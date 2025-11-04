@@ -96,3 +96,12 @@ func ConectarBD(config ConfigBD) (*sql.DB, error) {
 	log.Println("✓ Conexión exitosa a PostgreSQL")
 	return db, nil
 }
+
+// ObtenerPuerto retorna el puerto del servidor desde variable de entorno o usa el valor por defecto
+func ObtenerPuerto() string {
+	puerto := os.Getenv("PORT")
+	if puerto == "" {
+		puerto = "3200"
+	}
+	return ":" + puerto
+}
