@@ -3,6 +3,10 @@ package main
 import (
 	"fmt"
 	"kiosco/config"
+	"kiosco/handlers"
+	"kiosco/repository"
+	"kiosco/routes"
+	"kiosco/services"
 	"log"
 	"net/http"
 )
@@ -24,26 +28,15 @@ func main() {
 	defer db.Close()
 
 	// Inicializar capas de la aplicación
-	repo := NuevoRepositorio(db)
-	servicio := NuevoServicio(repo)
-	manejador, err := NuevoManejador(servicio)
+	repo := repository.NuevoRepositorio(db)
+	serv := services.NuevoServicio(repo)
+	manejador, err := handlers.NuevoManejador(serv)
 	if err != nil {
 		log.Fatalf("❌ Error al cargar templates: %v", err)
 	}
 
-		// Servir archivos estáticos
-	fs := http.FileServer(http.Dir("./static"))
-	http.Handle("/static/", http.StripPrefix("/static/", fs))
-
 	// Configurar rutas
-	http.HandleFunc("/", manejador.ManejadorInicio)
-	http.HandleFunc("/editar-consumos", manejador.ManejadorEditarConsumos)
-	http.HandleFunc("/guardar-consumos-dia", manejador.ManejadorGuardarConsumosDia)
-	http.HandleFunc("/registrar-consumo", manejador.ManejadorRegistrarConsumo)
-	http.HandleFunc("/editar-pagos", manejador.ManejadorEditarPagos)
-	http.HandleFunc("/registrar-pago", manejador.ManejadorRegistrarPago)
-	http.HandleFunc("/eliminar-pago", manejador.ManejadorEliminarPago)
-	http.HandleFunc("/ver-consumo-semanal", manejador.ManejadorVerConsumoSemanal)
+	routes.SetupRoutes(manejador)
 
 	// Iniciar servidor
 	puerto := ":3200"
