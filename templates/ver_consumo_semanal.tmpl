@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consumo Semanal - {{ .NombreEstudiante }}</title>
+    <link rel="stylesheet" href="/static/css/estilos.css">
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; }
+            .comprobante { box-shadow: none !important; border: 1px solid #000 !important; max-width: 100% !important; }
+        }
+    </style>
+</head>
+<body class="bg-[#F9FAFB]">
+
+    <div class="max-w-2xl mx-auto p-2 sm:p-4">
+        <!-- Botones de acción (no imprimir) -->
+        <div class="no-print mb-2 flex justify-between items-center">
+            <a href="/?fecha={{ formatearFechaCompleta .FechaInicio }}&grado={{ .GradoSeleccionado }}"
+               class="px-3 py-1.5 text-xs font-medium text-[#374151] bg-white border border-[#D1D5DB] rounded hover:bg-[#F9FAFB]">
+                ← Volver
+            </a>
+            <button id="btnCopiar" onclick="copiarComoPNG()"
+                    class="px-3 py-1.5 text-xs font-medium text-white bg-[#4f46e5] border border-transparent rounded hover:bg-[#4338ca] flex items-center gap-1">
+                <span id="iconoCopiar">📋</span>
+                <span id="textoCopiar">Copiar como imagen</span>
+            </button>
+        </div>
+
+        <!-- Comprobante -->
+        <div class="comprobante bg-white rounded-lg shadow-lg border border-[#D1D5DB] overflow-hidden">
+            <!-- Encabezado compacto -->
+            <div style="background: linear-gradient(to right, #4f46e5, #3730a3);" class="text-white px-4 py-2">
+                <div class="text-center">
+                    <h1 class="text-lg font-bold">Kiosco Escolar</h1>
+                    <p class="text-[#e0e7ff] text-xs">Comprobante Semanal</p>
+                </div>
+            </div>
+
+            <!-- Información compacta -->
+            <div class="px-4 py-2 border-b border-dashed border-[#D1D5DB] text-xs">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <span class="text-[#6B7280] font-semibold">Estudiante:</span>
+                        <span class="font-bold text-[#111827] ml-1">{{ .NombreEstudiante }}</span>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-[#6B7280] font-semibold">Periodo:</span>
+                        <span class="text-[#374151] ml-1">{{ .FechaInicio.Day }}-{{ .FechaFin.Day }}/{{ nombreMes .FechaInicio.Month }}/{{ .FechaInicio.Year }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detalle de consumos compacto en 2 columnas -->
+            <div class="px-4 py-3">
+                {{ if .ConsumosPorDia }}
+                    <div class="grid grid-cols-2 gap-2">
+                        {{ range .ConsumosPorDia }}
+                            <div class="border border-[#E5E7EB] rounded">
+                                <div class="flex justify-between items-center bg-[#F9FAFB] px-2 py-1 border-b border-[#E5E7EB]">
+                                    <span class="text-xs font-bold text-[#111827]">{{ formatearFechaLarga .Fecha }}</span>
+                                    <span class="text-xs font-bold text-[#4338ca]">{{ formatearMoneda .Total }}</span>
+                                </div>
+                                {{ if .Productos }}
+                                    <div class="divide-y divide-[#F3F4F6]">
+                                        {{ range .Productos }}
+                                            <div class="text-xs px-2 py-1">
+                                                <div class="flex justify-between items-center">
+                                                    <div class="flex items-center gap-1">
+                                                        <span class="text-[#374151] truncate pb-1">{{ .Nombre }}</span>
+                                                        <span class="text-[#9CA3AF] text-[10px] flex-shrink-0">×{{ .Cantidad }}</span>
+                                                    </div>
+                                                    <span class="font-semibold text-[#111827] ml-1 flex-shrink-0">{{ formatearMoneda .Total }}</span>
+                                                </div>
+                                            </div>
+                                        {{ end }}
+                                    </div>
+                                {{ end }}
+                            </div>
+                        {{ end }}
+                    </div>
+                {{ else }}
+                    <div class="text-center py-4">
+                        <p class="text-xs text-[#6B7280]">No hay consumos en esta semana</p>
+                    </div>
+                {{ end }}
+            </div>
+
+            <!-- Resumen financiero compacto -->
+            <div class="px-4 pb-3">
+                <div class="bg-[#F9FAFB] rounded border border-[#E5E7EB] p-2">
+                    <div class="space-y-1 text-xs">
+                        <div class="flex justify-between">
+                            <span class="text-[#4B5563]">Subtotal</span>
+                            <span class="font-semibold text-[#111827]">S/ {{ formatearMoneda .SubTotal }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-[#4B5563]">Deuda ant.</span>
+                            <span class="font-semibold text-[#c2410c]">S/ {{ formatearMoneda .DeudaAnterior }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-[#4B5563]">Pagos</span>
+                            <span class="font-semibold text-[#15803d]">- S/ {{ formatearMoneda .Pagos }}</span>
+                        </div>
+                        <div class="pt-1 mt-1 border-t border-[#D1D5DB]">
+                            <div class="flex justify-between items-center">
+                                <span class="font-bold text-[#111827]">TOTAL</span>
+                                <span class="text-base font-bold {{ if mayorQueCero .Total }}text-[#b91c1c]{{ else }}text-[#15803d]{{ end }}">
+                                    S/ {{ formatearMoneda .Total }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pie compacto -->
+            <div class="bg-[#F3F4F6] px-3 py-1.5 border-t border-[#D1D5DB]">
+                <p class="text-center text-[10px] text-[#6B7280]">Comprobante de consumo - Generado {{ formatearFechaLarga .FechaInicio }}</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Esperar a que html2canvas esté cargado
+        window.addEventListener('load', function() {
+            console.log('html2canvas cargado:', typeof html2canvas !== 'undefined');
+        });
+
+        // Copiar comprobante como imagen PNG
+        async function copiarComoPNG() {
+            const btnCopiar = document.getElementById('btnCopiar');
+            const textoCopiar = document.getElementById('textoCopiar');
+            const iconoCopiar = document.getElementById('iconoCopiar');
+            const comprobante = document.querySelector('.comprobante');
+
+            // Verificar que html2canvas esté disponible
+            if (typeof html2canvas === 'undefined') {
+                alert('Error: Librería html2canvas no está cargada. Por favor recarga la página.');
+                return;
+            }
+
+            // Cambiar estado del botón
+            btnCopiar.disabled = true;
+            textoCopiar.textContent = 'Generando...';
+            iconoCopiar.textContent = '⏳';
+
+            try {
+                // Generar imagen usando html2canvas
+                const canvas = await html2canvas(comprobante, {
+                    backgroundColor: '#ffffff',
+                    scale: 2,
+                    logging: true, // Activar logs para debug
+                    useCORS: true,
+                    allowTaint: true,
+                    width: comprobante.offsetWidth,
+                    height: comprobante.offsetHeight,
+                    windowWidth: comprobante.scrollWidth,
+                    windowHeight: comprobante.scrollHeight
+                });
+
+                console.log('Canvas generado:', canvas.width, 'x', canvas.height);
+
+                // Convertir canvas a blob PNG
+                canvas.toBlob(async (blob) => {
+                    if (!blob) {
+                        console.error('No se pudo generar el blob');
+                        mostrarError();
+                        return;
+                    }
+
+                    console.log('Blob generado:', blob.size, 'bytes');
+
+                    try {
+                        // Verificar soporte de Clipboard API
+                        if (!navigator.clipboard || !navigator.clipboard.write) {
+                            // Fallback: descargar la imagen
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = 'comprobante-{{ .NombreEstudiante }}.png';
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+
+                            textoCopiar.textContent = 'Descargado';
+                            iconoCopiar.textContent = '💾';
+                            btnCopiar.style.backgroundColor = '#16a34a';
+
+                            setTimeout(() => {
+                                textoCopiar.textContent = 'Copiar como imagen';
+                                iconoCopiar.textContent = '📋';
+                                btnCopiar.style.backgroundColor = '#4f46e5';
+                                btnCopiar.disabled = false;
+                            }, 2000);
+                            return;
+                        }
+
+                        // Copiar al portapapeles usando Clipboard API
+                        await navigator.clipboard.write([
+                            new ClipboardItem({
+                                'image/png': blob
+                            })
+                        ]);
+
+                        console.log('Imagen copiada al portapapeles');
+
+                        // Éxito
+                        textoCopiar.textContent = '¡Copiado!';
+                        iconoCopiar.textContent = '✅';
+                        btnCopiar.style.backgroundColor = '#16a34a';
+
+                        // Restaurar después de 2 segundos
+                        setTimeout(() => {
+                            textoCopiar.textContent = 'Copiar como imagen';
+                            iconoCopiar.textContent = '📋';
+                            btnCopiar.style.backgroundColor = '#4f46e5';
+                            btnCopiar.disabled = false;
+                        }, 2000);
+                    } catch (err) {
+                        console.error('Error al copiar al portapapeles:', err);
+                        mostrarError();
+                    }
+                }, 'image/png', 0.95);
+            } catch (err) {
+                console.error('Error al generar imagen:', err);
+                alert('Error al generar la imagen: ' + err.message);
+                mostrarError();
+            }
+        }
+
+        function mostrarError() {
+            const btnCopiar = document.getElementById('btnCopiar');
+            const textoCopiar = document.getElementById('textoCopiar');
+            const iconoCopiar = document.getElementById('iconoCopiar');
+
+            textoCopiar.textContent = 'Error';
+            iconoCopiar.textContent = '❌';
+            btnCopiar.style.backgroundColor = '#dc2626';
+
+            setTimeout(() => {
+                textoCopiar.textContent = 'Copiar como imagen';
+                iconoCopiar.textContent = '📋';
+                btnCopiar.style.backgroundColor = '#4f46e5';
+                btnCopiar.disabled = false;
+            }, 2000);
+        }
+
+        // Atajo de teclado para volver
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                window.location.href = '/?fecha={{ formatearFechaCompleta .FechaInicio }}&grado={{ .GradoSeleccionado }}';
+            }
+        });
+    </script>
+</body>
+</html>

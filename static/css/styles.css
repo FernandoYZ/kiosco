@@ -1,0 +1,61 @@
+@import "tailwindcss";
+
+/* Colores personalizados compatibles con html2canvas */
+@theme {
+    --color-primario: #4f46e5;
+    --color-primario-dark: #4338ca;
+    --color-primario-darker: #3730a3;
+    --color-primario-light: #e0e7ff;
+    --color-verde: #16a34a;
+    --color-verde-dark: #15803d;
+    --color-rojo: #dc2626;
+    --color-rojo-dark: #b91c1c;
+    --color-naranja: #c2410c;
+}
+
+/* Tabla de consumos */
+.tabla-consumo {
+    font-size: 0.875rem;
+}
+
+/* Columna de nombre estudiante sticky con ancho fijo */
+.nombre-estudiante {
+    position: sticky;
+    left: 0;
+    z-index: 10;
+    box-shadow: 2px 0 5px -2px rgba(0, 0, 0, 0.1);
+    width: 12rem; /* 192px - equivalente a w-48 de Tailwind */
+    min-width: 12rem;
+    max-width: 12rem;
+}
+
+/* Ancho fijo para columnas de días */
+.tabla-consumo th.w-40,
+.tabla-consumo td.w-40 {
+    width: 10rem; /* 160px - equivalente a w-40 de Tailwind */
+    min-width: 10rem;
+    max-width: 10rem;
+}
+
+/* Optimizaciones de rendimiento */
+* {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Smooth scrolling */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Mejorar performance de transiciones */
+a, button, input, label {
+    will-change: auto;
+}
+
+/* Estilos responsivos */
+@media (max-width: 640px) {
+    .tabla-consumo {
+        font-size: 0.75rem;
+    }
+}
