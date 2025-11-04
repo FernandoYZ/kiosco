@@ -39,12 +39,12 @@ func main() {
 	routes.SetupRoutes(manejador)
 
 	// Iniciar servidor
-	puerto := config.ObtenerPuerto()
-	fmt.Printf("✓ Servidor iniciado en http://localhost%s\n", puerto)
+	direccion := config.ObtenerPuerto()
+	fmt.Printf("✓ Servidor iniciado en %s\n", direccion)
 	fmt.Println("✓ Presiona Ctrl+C para detener el servidor")
 	fmt.Println()
 
-	if err := http.ListenAndServe(puerto, nil); err != nil {
+	if err := http.ListenAndServe(direccion, nil); err != nil {
 		log.Fatalf("❌ Error al iniciar servidor: %v", err)
 	}
 }

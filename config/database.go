@@ -97,11 +97,16 @@ func ConectarBD(config ConfigBD) (*sql.DB, error) {
 	return db, nil
 }
 
-// ObtenerPuerto retorna el puerto del servidor desde variable de entorno o usa el valor por defecto
+// ObtenerPuerto retorna la dirección del servidor desde variable de entorno o usa el valor por defecto
 func ObtenerPuerto() string {
 	puerto := os.Getenv("PORT")
 	if puerto == "" {
 		puerto = "3200"
+	}
+	// En producción (con PORT definido), escuchar en todas las interfaces (0.0.0.0)
+	// En desarrollo (sin PORT), escuchar en localhost
+	if os.Getenv("PORT") != "" {
+		return "0.0.0.0:" + puerto
 	}
 	return ":" + puerto
 }
