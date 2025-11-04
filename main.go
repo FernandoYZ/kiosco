@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"kiosco/config"
 	"log"
 	"net/http"
 )
@@ -15,8 +16,8 @@ func main() {
 	fmt.Println()
 
 	// Configurar conexión a la base de datos
-	config := ObtenerConfigBD()
-	db, err := ConectarBD(config)
+	cfg := config.ObtenerConfigBD()
+	db, err := config.ConectarBD(cfg)
 	if err != nil {
 		log.Fatalf("❌ Error fatal al conectar con PostgreSQL: %v", err)
 	}
