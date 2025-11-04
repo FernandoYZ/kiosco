@@ -15,52 +15,66 @@ type ConfigBD struct {
 	Contraseña string
 	Host       string
 	Puerto     string
-	NombreBD   string
-}
-
-// ObtenerConfigBD retorna la configuración desde variables de entorno o valores por defecto.
-func ObtenerConfigBD() ConfigBD {
-	// Leer variables de entorno
-	usuario := os.Getenv("DB_USER")
-	contraseña := os.Getenv("DB_PASSWORD")
-	host := os.Getenv("DB_HOST")
-	puerto := os.Getenv("DB_PORT")
-	nombreBD := os.Getenv("DB_NAME")
-
-	// Usar valores por defecto si las variables de entorno no están definidas
-	if usuario == "" {
-		usuario = "postgres"
+		NombreBD   string
+		SSLMode    string
+		ChannelBinding string
 	}
-	if contraseña == "" {
-		contraseña = "081102"
-	}
-	if host == "" {
-		host = "localhost"
-	}
-	if puerto == "" {
-		puerto = "5432"
-	}
-	if nombreBD == "" {
-		nombreBD = "Kiosco"
-	}
-
-	return ConfigBD{
-		Usuario:    usuario,
-		Contraseña: contraseña,
-		Host:       host,
-		Puerto:     puerto,
-		NombreBD:   nombreBD,
-	}
+	
+	// ObtenerConfigBD retorna la configuración desde variables de entorno o valores por defecto.
+	func ObtenerConfigBD() ConfigBD {
+		// Leer variables de entorno
+		usuario := os.Getenv("DB_USER")
+		contraseña := os.Getenv("DB_PASSWORD")
+		host := os.Getenv("DB_HOST")
+		puerto := os.Getenv("DB_PORT")
+		nombreBD := os.Getenv("DB_NAME")
+		sslMode := os.Getenv("PGSSLMODE")
+		channelBinding := os.Getenv("PGCHANNELBINDING")
+	
+		// Usar valores por defecto si las variables de entorno no están definidas
+		if usuario == "" {
+			usuario = "postgres"
+		}
+		if contraseña == "" {
+			contraseña = "081102"
+		}
+		if host == "" {
+			host = "localhost"
+		}
+		if puerto == "" {
+			puerto = "5432"
+		}
+		if nombreBD == "" {
+			nombreBD = "Kiosco"
+		}
+		if sslMode == "" {
+			sslMode = "disable" // Valor por defecto para desarrollo
+		}
+		if channelBinding == "" {
+			channelBinding = "disable" // Valor por defecto para desarrollo
+		}
+	
+		return ConfigBD{
+			Usuario:    usuario,
+			Contraseña: contraseña,
+			Host:       host,
+			Puerto:       puerto,
+			NombreBD:   nombreBD,
+			SSLMode:    sslMode,
+			ChannelBinding: channelBinding,
+		}
 }
 
 // ConectarBD establece la conexión con PostgreSQL
 func ConectarBD(config ConfigBD) (*sql.DB, error) {
-	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s channel_binding=%s",
 		config.Host,
 		config.Puerto,
 		config.Usuario,
 		config.Contraseña,
 		config.NombreBD,
+		config.SSLMode,
+		config.ChannelBinding,
 	)
 
 	db, err := sql.Open("postgres", dsn)
