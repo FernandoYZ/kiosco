@@ -1,4 +1,4 @@
-# fly.toml app configuration file generated for kiosco on 2025-11-04T22:52:51Z
+# fly.toml app configuration file generated for kiosco on 2025-11-04T23:16:35Z
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
@@ -7,9 +7,6 @@ app = 'kiosco'
 primary_region = 'gru'
 
 [build]
-
-[env]
-  PORT = "8080"
 
 [http_service]
   internal_port = 8080
