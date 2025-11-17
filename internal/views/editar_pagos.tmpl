@@ -1,0 +1,136 @@
+{{define "title"}}Editar Pagos - {{ .NombreEstudiante }}{{end}}
+
+{{define "content"}}
+    <div class="max-w-4xl mx-auto p-4 sm:p-6">
+        <div class="bg-white rounded-2xl shadow-lg border border-gray-200/80">
+            <!-- Encabezado -->
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">{{ .NombreEstudiante }}</h1>
+                        <p class="text-lg text-gray-600">Pagos de la semana del {{ .FechaInicio.Day }} al {{ .FechaFin.Day }} de {{ nombreMes .FechaInicio.Month }}</p>
+                    </div>
+                    <a href="/?fecha={{ formatearFechaCompleta .FechaInicio }}&grado={{ .GradoSeleccionado }}"
+                       class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50">
+                        ← Volver
+                    </a>
+                </div>
+            </div>
+
+            <!-- Formulario para agregar nuevo pago -->
+            <div class="p-6 bg-green-50 border-b border-green-100">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Registrar Nuevo Pago</h2>
+                <form method="POST" action="/registrar-pago" class="flex flex-col sm:flex-row gap-4">
+                    <input type="hidden" name="id_estudiante" value="{{ .IdEstudiante }}">
+                    <input type="hidden" name="fecha" value="{{ formatearFechaCompleta .FechaInicio }}">
+                    <input type="hidden" name="grado" value="{{ .GradoSeleccionado }}">
+                    <input type="hidden" name="redirect" value="editar-pagos">
+
+                    <div class="flex-1">
+                        <label for="monto" class="block text-sm font-medium text-gray-700 mb-1">Monto</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <span class="text-gray-500 sm:text-sm">S/</span>
+                            </div>
+                            <input type="number" name="monto" id="monto"
+                                   class="block w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                                   placeholder="0.00" step="0.01" min="0.01" required>
+                        </div>
+                    </div>
+
+                    <div class="flex-1">
+                        <label for="fecha_pago" class="block text-sm font-medium text-gray-700 mb-1">Fecha del Pago</label>
+                        <input type="date" name="fecha_pago" id="fecha_pago"
+                               value="{{ formatearFechaCompleta .FechaInicio }}"
+                               class="block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                               required>
+                    </div>
+
+                    <div class="flex items-end">
+                        <button type="submit"
+                                class="w-full sm:w-auto px-6 py-2 bg-green-600 text-white font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            Agregar Pago
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Lista de pagos existentes -->
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-semibold text-gray-900">Pagos Registrados</h2>
+                    {{ if .Pagos }}
+                        <div class="text-sm">
+                            <span class="text-gray-600">Total: </span>
+                            <span class="font-bold text-green-700 text-lg">S/ {{ formatearMoneda .TotalPagos }}</span>
+                        </div>
+                    {{ end }}
+                </div>
+
+                {{ if .Pagos }}
+                    <div class="space-y-3">
+                        {{ range .Pagos }}
+                            <div class="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
+                                            <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <p class="text-lg font-bold text-gray-900">S/ {{ formatearMoneda .Monto }}</p>
+                                            <p class="text-sm text-gray-600">{{ formatearFechaLarga .FechaPago }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <form method="POST" action="/eliminar-pago" onsubmit="return confirm('¿Estás seguro de eliminar este pago de S/ {{ formatearMoneda .Monto }}?');">
+                                    <input type="hidden" name="id_pago" value="{{ .IdPago }}">
+                                    <input type="hidden" name="id_estudiante" value="{{ $.IdEstudiante }}">
+                                    <input type="hidden" name="fecha" value="{{ formatearFechaCompleta $.FechaInicio }}">
+                                    <input type="hidden" name="grado" value="{{ $.GradoSeleccionado }}">
+                                    <button type="submit"
+                                            class="px-4 py-2 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                                        Eliminar
+                                    </button>
+                                </form>
+                            </div>
+                        {{ end }}
+                    </div>
+                {{ else }}
+                    <div class="text-center py-12">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                        </svg>
+                        <h3 class="mt-2 text-sm font-medium text-gray-900">No hay pagos registrados</h3>
+                        <p class="mt-1 text-sm text-gray-500">Comienza agregando un nuevo pago arriba.</p>
+                    </div>
+                {{ end }}
+            </div>
+
+            <!-- Botón de volver inferior -->
+            <div class="p-6 pt-0">
+                <a href="/?fecha={{ formatearFechaCompleta .FechaInicio }}&grado={{ .GradoSeleccionado }}"
+                   class="w-full inline-flex justify-center px-6 py-3 border border-gray-300 shadow-sm text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Volver a la Tabla Principal
+                </a>
+            </div>
+        </div>
+    </div>
+{{end}}
+
+{{define "scripts"}}
+    <script>
+        // Enfocar automáticamente el campo de monto
+        document.getElementById('monto').focus();
+
+        // Atajo de teclado para volver
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                window.location.href = '/?fecha={{ formatearFechaCompleta .FechaInicio }}&grado={{ .GradoSeleccionado }}';
+            }
+        });
+    </script>
+{{end}}
+
+{{template "base" .}}
