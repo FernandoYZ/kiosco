@@ -52,13 +52,10 @@ func (r *Repositorio) ObtenerDeudasAnterioresBatch(idGrado int, fechaLimite time
 	query := `
 		SELECT
 			e.IdEstudiante,
-			COALESCE(SUM(c.TotalLinea), 0) - COALESCE((
-				SELECT SUM(p.Monto)
-				FROM Pagos p
-				WHERE p.IdEstudiante = e.IdEstudiante AND p.FechaPago < $1
-			), 0) as deuda_anterior
+			COALESCE(SUM(c.TotalLinea), 0) - COALESCE(SUM(p.Monto), 0) as deuda_anterior
 		FROM Estudiantes e
-		LEFT JOIN Consumos c ON e.IdEstudiante = c.IdEstudiante AND c.FechaConsumo < $2
+		LEFT JOIN Consumos c ON e.IdEstudiante = c.IdEstudiante AND c.FechaConsumo < $1
+		LEFT JOIN Pagos p ON e.IdEstudiante = p.IdEstudiante AND p.FechaPago < $2
 		WHERE e.EstaActivo = true AND ($3 = 0 OR e.IdGrado = $4)
 		GROUP BY e.IdEstudiante
 	`
@@ -69,7 +66,7 @@ func (r *Repositorio) ObtenerDeudasAnterioresBatch(idGrado int, fechaLimite time
 	}
 	defer rows.Close()
 
-	deudas := make(map[int]float64, 50) // Pre-asignar para ~50 estudiantes
+	deudas := make(map[int]float64, 100) // Pre-asignar para ~100 estudiantes
 	for rows.Next() {
 		var idEstudiante int
 		var deuda float64
