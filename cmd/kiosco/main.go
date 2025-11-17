@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
-	"kiosco/config"
-	"kiosco/handlers"
-	"kiosco/repository"
-	"kiosco/routes"
-	"kiosco/services"
+	"kiosco/internal/config"
+	"kiosco/internal/controllers"
+	"kiosco/internal/db"
+	"kiosco/internal/repositories"
+	"kiosco/internal/router"
+	"kiosco/internal/services"
 	"log"
 	"net/http"
 )
@@ -15,28 +16,27 @@ func main() {
 	// Banner del sistema
 	fmt.Println("╔════════════════════════════════════════════╗")
 	fmt.Println("║    SISTEMA DE CONTROL DE CONSUMO ESCOLAR   ║")
-	fmt.Println("║               Kiosco v1.0                  ║")
 	fmt.Println("╚════════════════════════════════════════════╝")
 	fmt.Println()
 
 	// Configurar conexión a la base de datos
-	cfg := config.ObtenerConfigBD()
-	db, err := config.ConectarBD(cfg)
+	configuracion := config.ObtenerConfigBD()
+	baseDatos, err := db.ConectarBD(configuracion)
 	if err != nil {
 		log.Fatalf("❌ Error fatal al conectar con PostgreSQL: %v", err)
 	}
-	defer db.Close()
+	defer baseDatos.Close()
 
 	// Inicializar capas de la aplicación
-	repo := repository.NuevoRepositorio(db)
+	repo := repositories.NuevoRepositorio(baseDatos)
 	serv := services.NuevoServicio(repo)
-	manejador, err := handlers.NuevoManejador(serv)
+	controlador, err := controllers.NuevoControlador(serv)
 	if err != nil {
 		log.Fatalf("❌ Error al cargar templates: %v", err)
 	}
 
 	// Configurar rutas
-	routes.SetupRoutes(manejador)
+	router.ConfigurarRutas(controlador)
 
 	// Iniciar servidor
 	direccion := config.ObtenerPuerto()
