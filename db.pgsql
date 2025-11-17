@@ -42,8 +42,18 @@ CREATE TABLE Pagos (
 );
 
 CREATE INDEX idx_consumos_fecha ON Consumos(FechaConsumo);
-CREATE INDEX idx_consumos_estudiante_producto ON Consumos(IdEstudiante, IdProducto);
+CREATE INDEX idx_consumos_estudiante_fecha ON Consumos(IdEstudiante, FechaConsumo);
+CREATE INDEX idx_consumos_estudiante_producto_fecha ON Consumos(IdEstudiante, IdProducto, FechaConsumo);
+
 CREATE INDEX idx_pagos_estudiante ON Pagos(IdEstudiante);
+CREATE INDEX idx_pagos_estudiante_fecha ON Pagos(IdEstudiante, FechaPago);
+CREATE INDEX idx_pagos_fecha ON Pagos(FechaPago);
+
+CREATE INDEX idx_estudiantes_grado_activo ON Estudiantes(IdGrado, EstaActivo);
+CREATE INDEX idx_estudiantes_activo ON Estudiantes(EstaActivo) WHERE EstaActivo = true;
+CREATE INDEX idx_estudiantes_apellidos_nombres ON Estudiantes(Apellidos, Nombres);
+
+CREATE INDEX idx_grados_nivel_nombre ON Grados(NivelGrado, NombreGrado);
 
 INSERT INTO Productos (Nombre, PrecioUnitario, EstaActivo) VALUES
 ('Pan', 1.50, TRUE),
