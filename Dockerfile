@@ -1,11 +1,11 @@
-ARG GO_VERSION=1
+ARG GO_VERSION=1.24.6
 FROM golang:${GO_VERSION}-bookworm as builder
 
 WORKDIR /usr/src/app
 COPY go.mod go.sum ./
 RUN go mod download && go mod verify
 COPY . .
-RUN go build -v -o /run-app .
+RUN go build -v -o /run-app ./cmd/kiosco
 
 
 FROM debian:bookworm
@@ -15,8 +15,8 @@ WORKDIR /app
 # Copiar el binario compilado
 COPY --from=builder /run-app /usr/local/bin/
 
-# Copiar templates y archivos estáticos
-COPY --from=builder /usr/src/app/templates ./templates
+# Copiar views (templates) y archivos estáticos
+COPY --from=builder /usr/src/app/internal/views ./internal/views
 COPY --from=builder /usr/src/app/static ./static
 
 CMD ["run-app"]

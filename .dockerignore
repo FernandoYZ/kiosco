@@ -1,0 +1,84 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Documentación
+*.md
+README.md
+REFACTORIZACION.md
+estructura.md
+LICENSE
+CHANGELOG.md
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.travis.yml
+.circleci
+
+# IDEs y editores
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Archivos de configuración local
+.env
+.env.local
+env.bat
+.editorconfig
+
+# Binarios compilados
+*.exe
+*.dll
+*.so
+*.dylib
+kiosco
+kiosco.exe
+/run-app
+
+# Archivos de test
+*_test.go
+**/*_test.go
+testdata
+
+# Coverage
+*.out
+coverage.txt
+*.cover
+
+# Node (si aplica)
+node_modules
+npm-debug.log
+yarn-error.log
+package.json
+package-lock.json
+bun.lock
+
+# Deployment específico
+fly.toml
+.dockerignore
+Dockerfile*
+
+# Archivos temporales
+tmp
+temp
+*.tmp
+*.log
+logs
+
+# Assets de desarrollo (si no son necesarios)
+assets
+
+# Bases de datos locales
+*.db
+*.sqlite
+*.sqlite3
+db.pgsql
+
+# Scripts de desarrollo
+scripts
+dev.sh
