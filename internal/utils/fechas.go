@@ -2,7 +2,7 @@ package utils
 
 import (
 	"fmt"
-	"kiosco/models"
+	"kiosco/internal/models"
 	"time"
 )
 
