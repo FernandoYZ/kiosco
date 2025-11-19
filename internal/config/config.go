@@ -52,10 +52,12 @@ func ObtenerConfigBD() ConfigBD {
 }
 
 func ObtenerPuerto() string {
-    puerto := os.Getenv("PORT")
-    if puerto == "" {
-        puerto = "3200"
-    }
-    
-    return "0.0.0.0:" + puerto
+	puerto := os.Getenv("PORT")
+	if puerto == "" {
+		puerto = "3200"
+	}
+	if os.Getenv("PORT") != "" {
+		return "0.0.0.0:" + puerto
+	}
+	return ":" + puerto
 }
