@@ -56,7 +56,6 @@ func ObtenerPuerto() string {
     if puerto == "" {
         puerto = "3200"
     }
-
-    // En producción SIEMPRE escuchar en localhost
-    return "127.0.0.1:" + puerto
+    
+    return "0.0.0.0:" + puerto
 }
