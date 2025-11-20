@@ -18,9 +18,9 @@ RUN useradd -m -s /bin/bash appuser
 
 WORKDIR /app
 
-COPY --from=builder /app/run-app /usr/local/bin/run-app
-COPY --from=builder /app/internal/views ./internal/views
-COPY --from=builder /app/static ./static
+COPY --from=builder /usr/src/app/run-app /usr/local/bin/run-app
+COPY --from=builder /usr/src/app/internal/views ./internal/views
+COPY --from=builder /usr/src/app/static ./static
 
 RUN chown -R appuser:appuser /app
 
