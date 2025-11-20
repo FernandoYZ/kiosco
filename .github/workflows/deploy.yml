@@ -11,9 +11,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
+      # 1. Descargar repo
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      # 2. Configurar SSH
       - name: Configure SSH
         run: |
           mkdir -p ~/.ssh
@@ -22,17 +25,31 @@ jobs:
           printf "Host vps\n  HostName %s\n  User %s\n  IdentityFile ~/.ssh/id_ed25519\n  StrictHostKeyChecking no\n" \
             "${{ secrets.VPS_HOST }}" "${{ secrets.VPS_USER }}" >> ~/.ssh/config
 
+      # 3. Sincronizar código al VPS
       - name: Sync project to VPS
         run: |
           rsync -avz --delete \
             --exclude='.git/' \
             --exclude='.github/' \
+            --exclude='.env' \
+            --exclude='postgres_data/' \
             ./ vps:${{ secrets.VPS_PROJECT_PATH }}/
 
+      # 4. Construir en el VPS y reiniciar servicios
       - name: Build and restart services on VPS
         run: |
           ssh vps << 'EOF'
+            set -e
+
             cd ${{ secrets.VPS_PROJECT_PATH }}
+
+            # Siempre aseguramos dependencias previas
             docker compose down
+
+            # Construir imagen + levantar servicios
             docker compose up -d --build
+
+            # Ver estado final
+            docker compose ps
+
           EOF
