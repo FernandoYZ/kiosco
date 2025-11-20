@@ -28,4 +28,4 @@ ENV TZ=America/Lima
 USER appuser
 
 EXPOSE 3200
-CMD ["run-app"]
+CMD ["/usr/local/bin/run-app"]
