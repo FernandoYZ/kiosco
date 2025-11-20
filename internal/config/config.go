@@ -51,13 +51,20 @@ func ObtenerConfigBD() ConfigBD {
 	}
 }
 
-func ObtenerPuerto() string {
+// ObtenerDireccion retorna la dirección (host:puerto) para el servidor web.
+// Lee las variables de entorno HOST y PORT, con valores por defecto para desarrollo.
+func ObtenerDireccion() string {
+	host := os.Getenv("HOST")
+	if host == "" {
+		// Para desarrollo, "localhost" es más seguro.
+		// Para producción en un VPS (especialmente con Docker), deberías establecer HOST="0.0.0.0"
+		host = "localhost"
+	}
+
 	puerto := os.Getenv("PORT")
 	if puerto == "" {
 		puerto = "3200"
 	}
-	if os.Getenv("PORT") != "" {
-		return "0.0.0.0:" + puerto
-	}
-	return ":" + puerto
+
+	return host + ":" + puerto
 }
