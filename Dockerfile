@@ -28,5 +28,4 @@ ENV TZ=America/Lima
 USER appuser
 
 EXPOSE 3200
-ENTRYPOINT ["run-app"]
-CMD []
+CMD ["run-app"]
