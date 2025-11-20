@@ -25,9 +25,8 @@ COPY --from=builder /usr/src/app/static ./static
 RUN chown -R appuser:appuser /app
 
 ENV TZ=America/Lima
-
 USER appuser
 
 EXPOSE 3200
-
 ENTRYPOINT ["run-app"]
+CMD []
