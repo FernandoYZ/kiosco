@@ -5,18 +5,29 @@ WORKDIR /usr/src/app
 COPY go.mod go.sum ./
 RUN go mod download && go mod verify
 COPY . .
-RUN go build -v -o /run-app ./cmd/kiosco
+RUN go build -trimpath -ldflags="-s -w" -o run-app ./cmd/kiosco
 
 
-FROM debian:bookworm
+FROM debian:bookworm-slim
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates tzdata && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN useradd -m -s /bin/bash appuser
 
 WORKDIR /app
 
-# Copiar el binario compilado
-COPY --from=builder /run-app /usr/local/bin/
+COPY --from=builder /app/run-app /usr/local/bin/run-app
+COPY --from=builder /app/internal/views ./internal/views
+COPY --from=builder /app/static ./static
 
-# Copiar views (templates) y archivos estáticos
-COPY --from=builder /usr/src/app/internal/views ./internal/views
-COPY --from=builder /usr/src/app/static ./static
+RUN chown -R appuser:appuser /app
 
-CMD ["run-app"]
+ENV TZ=America/Lima
+
+USER appuser
+
+EXPOSE 3200
+
+ENTRYPOINT ["run-app"]
