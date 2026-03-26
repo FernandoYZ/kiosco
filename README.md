@@ -1,23 +1,19 @@
 # Kiosco - Sistema de Control de Consumo Escolar
 
-Sistema web optimizado desarrollado en **GoLang** para gestionar consumos, pagos y deudas de estudiantes en kioscos escolares.
+Sistema web para gestionar consumos, pagos y deudas de estudiantes en kioscos escolares. Desarrollado en Go puro con SQLite embebido — sin frameworks, sin Docker, un solo binario autocontenido.
 
-![Vista Principal](assets/images/captura_index.png)
+## Características principales
 
-## Características Principales
-
-- **Vista Semanal:** Resumen completo de consumos por estudiante para la semana actual o cualquier semana seleccionada
-- **Filtrado por Grado:** Navegación rápida entre diferentes grados escolares (Primaria/Secundaria)
-- **Registro de Consumos:** Interfaz ágil para añadir/modificar consumos de productos por estudiante y fecha
-- **Gestión de Pagos:** Sistema de registro de pagos con historial detallado por estudiante
-- **Cálculo Automático de Deuda:**
-    - **Deuda Anterior:** Acumulado de semanas previas
-    - **Subtotal Semanal:** Suma de consumos de la semana
-    - **Pagos/Descuentos:** Montos abonados durante el período
-    - **Deuda Total:** Cálculo en tiempo real
-- **Edición Diaria:** Vista dedicada para modificar todos los productos consumidos en un día específico
-- **Días no Hábiles:** Configuración de feriados/días no laborables
-- **Interfaz Optimizada:** Diseño responsivo con TailwindCSS, ideal para ventas rápidas
+- **Vista semanal:** tabla de consumos por estudiante, grado y semana seleccionada
+- **Filtrado por grado:** navegación rápida entre Primaria y Secundaria
+- **Registro de consumos:** agregar y modificar consumos por producto, estudiante y fecha
+- **Edición diaria:** vista dedicada para ajustar todos los productos de un día específico
+- **Gestión de pagos:** registro de pagos con historial por estudiante
+- **Cálculo de deuda en tiempo real:** deuda anterior + consumos de la semana − pagos
+- **Setup de estudiantes:** CRUD completo con habilitación/deshabilitación
+- **Setup de productos:** gestión de productos disponibles en el kiosco
+- **Autenticación con sesiones firmadas:** cookies HMAC-SHA256, Argon2id para contraseñas
+- **Binario autocontenido:** estáticos y schema SQL embebidos en el binario
 
 ## Vista Previa del Sistema
 
@@ -27,316 +23,194 @@ Sistema web optimizado desarrollado en **GoLang** para gestionar consumos, pagos
 ### Edición de Consumos Diarios
 ![Editar Productos](assets/images/captura_editar_producto.png)
 
-## Tecnologías Utilizadas
+## Tecnologías utilizadas
 
-- **Backend:** Go 1.24.6 (stdlib puro, sin frameworks)
-- **Base de Datos:** PostgreSQL 14+ (queries optimizadas, 10+ índices)
-- **Frontend:** HTML5, TailwindCSS CLI, JavaScript vanilla
-- **Arquitectura:** MVC-like con separación de capas (Repository Pattern)
+| Capa | Tecnología |
+|------|------------|
+| Backend | Go 1.25+, `net/http` (sin frameworks) |
+| Base de datos | SQLite (`modernc.org/sqlite` — pure Go, sin CGO) |
+| Templates | `a-h/templ` — templates compilados a Go |
+| Autenticación | `golang.org/x/crypto` — Argon2id |
+| CSS | TailwindCSS v4 CLI |
+| JS interactividad | Alpine.js 3.x, HTMX 2.x |
+| Exportación | html-to-image |
+| Build frontend | Bun |
 
-## Inicio Rápido
+## Inicio rápido
 
 ### Prerrequisitos
 
-- **Go 1.24.6**: [Descargar Go](https://go.dev/dl/)
-- **PostgreSQL 17**: Local o remoto (Neon, Supabase, etc.)
-- **Git**: Para clonar el repositorio
+- [Go 1.25+](https://go.dev/dl/)
+- [Bun](https://bun.sh/) — para compilar assets frontend
+- [templ CLI](https://templ.guide/quick-start/installation) — para generar templates Go
 
-### Instalación
+### Desarrollo local
 
-#### 1. Clonar el Repositorio
 ```bash
-git clone https://github.com/FernandoYZ/kiosco.git
-cd kiosco
+# 1. Instalar dependencias frontend
+bun install
+
+# 2. Compilar assets estáticos
+bun run start:static
+
+# 3. Generar templates Go
+templ generate
+
+# 4. Ejecutar la aplicación
+go run ./cmd/kiosco
 ```
 
-#### 2. Configurar la Base de Datos
+Acceder en: **http://localhost:3200**
 
-**Creación de la Base de datos Local o remoto**
+Para desarrollar estilos con recarga automática:
+
+```bash
+bun run css:dev   # watch mode — observa cambios en assets/main.css
+```
+
+Variables de entorno opcionales (tienen valores por defecto):
+
+| Variable | Por defecto |
+|----------|-------------|
+| `HOST` | `0.0.0.0` |
+| `PORT` | `3200` |
+
+## CSS y JS personalizados
+
+Los assets de entrada están en `assets/`:
+
+- **`assets/main.css`** — punto de entrada de TailwindCSS. Agregar aquí estilos personalizados o directivas `@layer`.
+- **`assets/main.js`** — punto de entrada de Bun. Agregar aquí código JavaScript propio.
+
+Al ejecutar `bun run start:static`, estos archivos se compilan y minimizan en `public/dist/`. Los archivos en `public/` se embeben en el binario al compilar con `go build`.
+
+## Compilación y despliegue
+
+### Compilar el binario
+
+```bash
+# Windows
+go build -ldflags="-s -w" -o kiosco.exe ./cmd/kiosco
+
+# Linux/macOS
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o kiosco ./cmd/kiosco
+```
+
+El binario resultante incluye todos los archivos estáticos y el schema SQL — no requiere archivos adicionales salvo la base de datos.
+
+### Despliegue en VPS
+
+```bash
+scp kiosco user@vps:/app/
+scp database/database.db user@vps:/app/database/
+```
+
+Luego en el servidor:
+
+```bash
+./kiosco
+```
+
+Si no existe `database/database.db`, se crea automáticamente con el schema y los datos iniciales (grados y productos por defecto).
+
+### Crear usuario administrador
+
+No existe ruta de registro. Los usuarios deben insertarse directamente en la base de datos con un hash Argon2id:
+
 ```sql
--- Crear la base de datos
-CREATE DATABASE Kiosco;
+INSERT INTO usuarios (usuario, contrasenha, puede_editar)
+VALUES ('admin', '$argon2id$v=19$...hash...', 1);
 ```
 
-- Copia el contenido de `db.pgsql`
-- Pégalo en el SQL Editor de tu proveedor o en el gestor de tu máquina local
-- Ejecuta el script
+Usar una herramienta externa para generar el hash Argon2id antes de insertar.
 
-#### 3. Configuración y Ejecución en Desarrollo
+## Rutas de la aplicación
 
-Para ejecutar la aplicación en tu máquina local, necesitas configurar las variables de entorno (como la contraseña de la base de datos) y luego iniciar el programa Go.
+### Rutas públicas
 
-- `run.example.bat` (Para Windows)
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| `GET` | `/login` | Formulario de inicio de sesión |
+| `POST` | `/login` | Procesar credenciales |
+| `GET/POST` | `/logout` | Cerrar sesión |
 
-- `run.example.sh` (Para Linux / macOS)
+### Rutas protegidas (requieren sesión)
 
-**Windows:**
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| `GET` | `/` | Vista principal semanal |
+| `GET/POST` | `/editar-consumos` | Editar consumos del día |
+| `POST` | `/guardar-consumos-dia` | Guardar cambios de edición diaria |
+| `POST` | `/registrar-consumo` | Registrar consumo |
+| `GET/POST` | `/editar-pagos` | Gestión de pagos |
+| `POST` | `/registrar-pago` | Registrar pago |
+| `POST` | `/eliminar-pago` | Eliminar pago |
+| `GET` | `/ver-consumo-semanal` | Ver resumen semanal |
+| `GET/POST` | `/setup` | Configuración de estudiantes |
+| `GET/POST` | `/setup/estudiante` | Crear estudiante |
+| `POST` | `/setup/estudiante/actualizar` | Actualizar estudiante |
+| `POST` | `/setup/estudiante/toggle` | Habilitar/deshabilitar estudiante |
+| `GET/POST` | `/setup/productos` | Configuración de productos |
+| `GET/POST` | `/setup/producto` | Crear producto |
+| `POST` | `/setup/producto/actualizar` | Actualizar producto |
+| `POST` | `/setup/producto/toggle` | Habilitar/deshabilitar producto |
 
-**Paso 1: Copiar la plantilla**
-En `cmd` o `PowerShell`, crea una copia del script de plantilla. Nunca edites el archivo `.example` directamente.
-
-**Archivo `env.bat` (Windows):**
-```bat
-@echo off
-set DB_USER=postgres
-set DB_PASSWORD=tu_contraseña_real
-set DB_HOST=localhost
-set DB_PORT=5432
-set DB_NAME=Kiosco
-set PGSSLMODE=disable
-
-go run ./cmd/kiosco
-pause
-```
-
-```bash
-# Copia la plantilla
-copy run.example.bat run.bat
-```
-
-**Paso 2: Editar el script**
-Abre el nuevo archivo `run.bat` con cualquier editor de texto (como Notepad) y completa tus credenciales, especialmente `DB_PASSWORD`.
-
-```bash
-# Abrir con el Bloc de notas
-notepad run.bat
-```
-
-**Paso 3: Ejecutar la aplicación**
-Simplemente ejecuta el script. Cargará las variables y lanzará la aplicación.
-
-```bash
-# Ejecuta el script
-.\run.bat
-```
-
-La aplicación se estará ejecutando en tu terminal.
-
----
-
-**Linux/macOS:**
-
-**Paso 1: Copiar la plantilla**
-En tu terminal, crea una copia del script de plantilla.
-
-```sh
-# Copia la plantilla
-cp run.example.sh run.sh
-```
-
-**Archivo `env.sh` (Mac/Linux):**
-```sh
-# Configuración de base de datos
-export DB_USER="postgres"
-export DB_PASSWORD="TU_CONTRASEÑA_AQUI"
-export DB_HOST="localhost"
-export DB_PORT="5432"
-export DB_NAME="Kiosco"
-export PGSSLMODE="disable"
-
-# --- Confirmar que las variables de entorno se cargaron correctamente ---
-echo "[env] Variables de entorno cargadas con exito."
-
-# --- Ejecutar la aplicación Go ---
-echo "[app] Ejecutando la aplicacion Go desde cmd/kiosco..."
-go run ./cmd/kiosco
-```
-
-**Paso 2: Editar el script**
-Abre el nuevo archivo `run.sh` con cualquier editor de texto y completa tus credenciales, especialmente `DB_PASSWORD`.
-
-```sh
-# Abrir con el editor nano (o el de tu preferencia)
-nano run.sh
-```
-
-**Paso 3: Dar permisos de ejecución**
-En Linux y macOS, necesitas hacer que el script sea ejecutable. *Solo necesitas hacer esto una vez*.
-
-```sh
-chmod +x run.sh
-```
-
-**Paso 4: Ejecutar la aplicación**
-Ejecuta el script para cargar las variables y lanzar la aplicación.
-
-```sh
-# Ejecuta el script de shell
-./run.sh
-```
-
-
-#### 4. Compilación (Opcional)
-
-Si prefieres compilar la aplicación en un solo binario en lugar de `usar go` run en cada ejecución:
-
-```go
-# Compilar para Windows
-go build -o kiosco.exe ./cmd/kiosco
-
-# Compilar para Linux/macOS
-go build -o kiosco ./cmd/kiosco
-```
-
-**Para ejecutar el binario compilado:**
-Aún necesitas las variables de entorno. La forma más fácil es modificar tus scripts `run.bat` o `run.sh`:
-
-1. Busca la última línea `go run ./cmd/kiosco`.
-
-2. Cámbiala por `./kiosco.exe` (en Windows) o `./kiosco` (en Linux/Mac).
-
-3. Vuelve a ejecutar el script `.\run.bat` o `./run.sh`.
-
-```sh
-# Compilar
-go build -o kiosco.exe ./cmd/kiosco  # Windows
-go build -o kiosco ./cmd/kiosco      # Linux/macOS
-
-# Ejecutar
-./kiosco.exe  # Windows
-./kiosco      # Linux/macOS
-```
-
-#### 5. Acceder a la Aplicación
-Abre tu navegador en: **http://localhost:3200**
-
-## Estructura del Proyecto
+## Estructura del proyecto
 
 ```
 kiosco/
-├── cmd/
-│   └── kiosco/
-│       └── main.go             # Punto de entrada de la aplicación
-│
-├── internal/                   # Código privado (no exportable)
+├── cmd/kiosco/main.go
+├── internal/
+│   ├── auth/auth.go              # Llave efímera, HMAC token, Argon2id
 │   ├── config/
-│   │   └── config.go           # Configuración de variables de entorno
-│   │
-│   ├── db/
-│   │   └── conexion.go         # Pool de conexiones PostgreSQL
-│   │
-│   ├── models/                 # Modelos de datos
-│   │   ├── estudiante.go
-│   │   ├── grado.go
-│   │   ├── producto.go
-│   │   ├── consumo.go
-│   │   ├── pago.go
-│   │   └── common.go           # DTOs compartidos
-│   │
-│   ├── repositories/           # Capa de acceso a datos (Repository Pattern)
-│   │   ├── repository.go       # Estructura base
-│   │   ├── estudiante.go       # Queries de estudiantes
-│   │   ├── producto.go         # Queries de productos
-│   │   ├── consumo.go          # Queries de consumos
-│   │   └── pago.go             # Queries de pagos
-│   │
-│   ├── services/               # Lógica de negocio
-│   │   └── services.go
-│   │
-│   ├── controllers/            # Controladores HTTP
-│   │   ├── base.go             # Estructura base del controlador
+│   │   ├── config.go             # HOST/PORT env vars (default 0.0.0.0:3200)
+│   │   ├── database.go           # Singleton SQLite + auto-init schema
+│   │   ├── schema.sql            # Schema embebido en el binario
+│   │   └── static.go             # Archivos estáticos embebidos (embed.FS)
+│   ├── controllers/
+│   │   ├── base.go
+│   │   ├── auth_controller.go
 │   │   ├── vistas_controller.go
 │   │   ├── consumos_controller.go
-│   │   └── pagos_controller.go
-│   │
-│   ├── router/                 # Configuración de rutas
-│   │   └── router.go
-│   │
-│   ├── middleware/             # Middleware HTTP
-│   │   └── logger.go           # Logging y recuperación de panics
-│   │
-│   ├── views/                  # Plantillas HTML
-│   │   ├── layouts/
-│   │   │   └── base.tmpl       # Layout base compartido
-│   │   ├── index.tmpl
-│   │   ├── editar_consumos.tmpl
-│   │   ├── editar_pagos.tmpl
-│   │   └── ver_consumo_semanal.tmpl
-│   │
-│   └── utils/                  # Utilidades
-│       ├── templates.go        # Funciones para templates
-│       └── fechas.go           # Utilidades de fechas
-│
-├── static/                     # Archivos estáticos
-│   └── css/
-│       ├── estilos.css
-│       └── styles.css
-│
-├── assets/                     # Recursos (imágenes, docs)
-│   └── images/
-│       └── *.png               # Capturas del sistema
-│
-├── db.pgsql                    # Script SQL de la base de datos
-├── Dockerfile                  # Configuración de contenedor Docker
-├── .dockerignore               # Archivos excluidos de Docker
-├── env.example.bat             # Plantilla de variables de entorno (Windows)
-├── go.mod                      # Dependencias del proyecto
-├── go.sum                      # Checksums de dependencias
-└── README.md                   # Este archivo
-```
-
-### Convenciones Adoptadas
-
-- **Estructura estándar de Go**: `cmd/` (ejecutables) + `internal/` (código privado)
-- **Separación por capas**: Models → Repositories → Services → Controllers
-- **Package names en inglés**: Convención de Go (controllers, repositories, etc.)
-- **Código en español**: Funciones, variables y comentarios para facilitar el mantenimiento
-
-## Rutas de la Aplicación
-
-La aplicación usa **renderizado del lado del servidor** (SSR) con templates HTML.
-
-| Método | Ruta | Descripción | Parámetros |
-|--------|------|-------------|------------|
-| `GET` | `/` | Vista principal con tabla de consumos semanal | `?fecha=YYYY-MM-DD`, `?grado=ID`, `?dias_off=YYYY-MM-DD,YYYY-MM-DD` |
-| `POST` | `/registrar-consumo` | Registrar/actualizar consumo de producto | `id_estudiante`, `id_producto`, `cantidad`, `fecha` |
-| `POST` | `/registrar-pago` | Registrar pago de estudiante | `id_estudiante`, `monto`, `fecha_pago` |
-| `GET` | `/editar-consumos` | Vista de edición de consumos diarios | `?id_estudiante=ID`, `?fecha=YYYY-MM-DD` |
-| `POST` | `/guardar-consumos-dia` | Guardar cambios de edición diaria | `id_estudiante`, `fecha`, `productos[]` |
-| `GET` | `/editar-pagos` | Vista de gestión de pagos | `?id_estudiante=ID`, `?fecha=YYYY-MM-DD` |
-| `POST` | `/eliminar-pago` | Eliminar un pago registrado | `id_pago` |
-
-## Optimizaciones de Rendimiento
-
-### Base de Datos
-- **10+ índices optimizados** para consultas frecuentes
-- **Queries batch** para reducir round-trips a la DB
-- **Índices compuestos** en columnas más consultadas (IdEstudiante, FechaConsumo, etc.)
-- **Índice parcial** en `Estudiantes.EstaActivo = true` (solo indexa activos)
-- Pool de conexiones configurado: `MaxOpenConns = 2`, `MaxIdleConns = 2`
-
-### Backend
-- **Sin frameworks web**: net/http (reducción de overhead)
-- **Sin ORM**: SQL con prepared statements (máxima velocidad)
-- **Templates compilados** en memoria al inicio
-- **Batch queries** para obtener deudas/pagos de todos los estudiantes en una sola consulta
-- **Pre-asignación de memoria** en maps y slices
-
-### Resultados
-- **~50-70% más rápido** en consultas con índices vs sin índices
-- **~60-80% más rápido** en cálculos de deudas con batch queries
-- **<100ms** de respuesta con 200-500 estudiantes (PostgreSQL local)
-- **200-400ms** con PostgreSQL remoto (Neon/Supabase)
-
-## Deployment
-
-### Docker
-```bash
-# Construir imagen
-docker build -t kiosco .
-
-# Ejecutar contenedor
-docker run -p 3200:3200 \
-  -e DB_USER=postgres \
-  -e DB_PASSWORD=tu_contraseña \
-  -e DB_HOST=tu_host \
-  -e DB_PORT=5432 \
-  -e DB_NAME=Kiosco \
-  kiosco
+│   │   ├── pagos_controller.go
+│   │   ├── setup_controller.go
+│   │   └── productos_controller.go
+│   ├── middleware/middleware.go   # RequiereAuth, Proteger
+│   ├── models/                   # Structs: Estudiante, Producto, Consumo, Pago, Usuario
+│   ├── repositories/             # Acceso a datos SQLite
+│   ├── router/router.go
+│   ├── services/services.go
+│   └── utils/
+├── templates/
+│   ├── layouts/default.templ
+│   └── pages/
+│       ├── login.templ
+│       ├── inicio.templ
+│       ├── setup_estudiantes.templ
+│       ├── setup_productos.templ
+│       ├── editar_consumos.templ
+│       ├── editar_pagos.templ
+│       └── ver_consumo_semanal.templ
+├── assets/
+│   ├── main.css                  # Estilos personalizados (entrada Tailwind)
+│   └── main.js                   # JS personalizado (entrada Bun)
+├── public/                       # Estáticos generados (embebidos en el binario)
+│   ├── dist/
+│   │   ├── styles.css
+│   │   ├── alpine.min.js
+│   │   ├── htmx.min.js
+│   │   ├── canvas.min.js
+│   │   └── bundle.min.js
+│   ├── fonts/
+│   └── favicon.webp
+├── database/database.db          # Creado automáticamente en el primer arranque
+├── assets.go                     # embed.FS para public/
+├── go.mod
+├── go.sum
+└── package.json
 ```
 
 ## Contacto
 
-**Desarrollador**: Fernando YZ
-**GitHub**: [@FernandoYZ](https://github.com/FernandoYZ)
-**Proyecto**: [github.com/FernandoYZ/kiosco](https://github.com/FernandoYZ/kiosco)
+**Desarrollador:** Fernando YZ
+**GitHub:** [@FernandoYZ](https://github.com/FernandoYZ)
