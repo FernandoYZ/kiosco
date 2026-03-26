@@ -2,41 +2,30 @@ package main
 
 import (
 	"fmt"
+	"kiosco/internal/auth"
 	"kiosco/internal/config"
 	"kiosco/internal/controllers"
-	"kiosco/internal/db"
-	"kiosco/internal/repositories"
 	"kiosco/internal/router"
-	"kiosco/internal/services"
 	"log"
 	"net/http"
 )
 
 func main() {
-	// Banner del sistema
-	fmt.Println("╔════════════════════════════════════════════╗")
-	fmt.Println("║    SISTEMA DE CONTROL DE CONSUMO ESCOLAR   ║")
-	fmt.Println("╚════════════════════════════════════════════╝")
+	fmt.Println("==== SISTEMA DE CONTROL DE CONSUMO ESCOLAR ====")
 	fmt.Println()
 
-	// Configurar conexión a la base de datos
-	configuracion := config.ObtenerConfigBD()
-	baseDatos, err := db.ConectarBD(configuracion)
-	if err != nil {
-		log.Fatalf("❌ Error fatal al conectar con PostgreSQL: %v", err)
-	}
-	defer baseDatos.Close()
+	// Generar llave efímera HMAC en memoria (se invalida al reiniciar el servidor)
+	auth.LlaveEfimera()
+	fmt.Println("✓ Llave de sesión generada en memoria")
 
-	// Inicializar capas de la aplicación
-	repo := repositories.NuevoRepositorio(baseDatos)
-	serv := services.NuevoServicio(repo)
-	controlador, err := controllers.NuevoControlador(serv)
+	// Inicializar controlador (SQLite, repositorio y servicio se inicializan internamente)
+	controlador, err := controllers.NuevoControlador()
 	if err != nil {
-		log.Fatalf("❌ Error al cargar templates: %v", err)
+		log.Fatalf("❌ Error al iniciar controlador: %v", err)
 	}
 
-	// Configurar rutas
-	router.ConfigurarRutas(controlador)
+	// Configurar rutas y archivos estáticos
+	mux := router.ConfigurarRutas(controlador)
 
 	// Iniciar servidor
 	direccionServidor := config.ObtenerDireccion()
@@ -44,7 +33,7 @@ func main() {
 	fmt.Println("✓ Presiona Ctrl+C para detener el servidor")
 	fmt.Println()
 
-	if err := http.ListenAndServe(direccionServidor, nil); err != nil {
+	if err := http.ListenAndServe(direccionServidor, mux); err != nil {
 		log.Fatalf("❌ Error al iniciar servidor: %v", err)
 	}
 }
