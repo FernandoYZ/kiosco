@@ -6,6 +6,16 @@ import (
 	"time"
 )
 
+// NombreGrado retorna el nombre del grado a partir de su ID estático
+func NombreGrado(idGrado int) string {
+	for _, g := range ObtenerGradosEstaticos() {
+		if g.IdGrado == idGrado {
+			return g.Nombre
+		}
+	}
+	return ""
+}
+
 // ObtenerGradosEstaticos retorna la lista estática de grados (sin "Todos")
 func ObtenerGradosEstaticos() []models.InfoGrado {
 	return []models.InfoGrado{
