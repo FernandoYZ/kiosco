@@ -1,0 +1,306 @@
+package pages
+
+import (
+	"fmt"
+	"kiosco/internal/models"
+	"kiosco/internal/utils"
+	"kiosco/templates/layouts"
+)
+
+// FilaEstudiante es el fragmento HTMX retornado al agregar/editar/toggle un estudiante
+templ FilaEstudiante(est models.Estudiante, grados []models.InfoGrado) {
+	<div
+		id={ "est-" + fmt.Sprintf("%d", est.IdEstudiante) }
+		x-data="{ editando: false }"
+		class={
+			"border rounded-lg overflow-hidden",
+			templ.KV("border-gray-200 bg-white", est.EstaActivo),
+			templ.KV("border-gray-100 bg-gray-50 opacity-55", !est.EstaActivo),
+		}
+	>
+		<!-- Vista normal -->
+		<div x-show="!editando" class="flex items-center justify-between p-3 gap-3">
+			<div class="min-w-0 flex-1">
+				<p class={ "font-medium truncate text-sm", templ.KV("text-gray-900", est.EstaActivo), templ.KV("text-gray-400 line-through", !est.EstaActivo) }>
+					{ est.Apellidos }, { est.Nombres }
+				</p>
+				<p class="text-xs text-gray-400 mt-0.5">{ utils.NombreGrado(est.IdGrado) }</p>
+			</div>
+			<div class="flex items-center gap-1.5 shrink-0">
+				<button
+					@click="editando = true"
+					class="px-2.5 py-1 text-xs font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-md hover:bg-indigo-100 transition-colors"
+				>Editar</button>
+				if est.EstaActivo {
+					<button
+						hx-post="/setup/estudiante/toggle"
+						hx-target={ "#est-" + fmt.Sprintf("%d", est.IdEstudiante) }
+						hx-swap="outerHTML"
+						hx-vals={ fmt.Sprintf(`{"id_estudiante":"%d","esta_activo":"0"}`, est.IdEstudiante) }
+						hx-confirm="¿Deshabilitar este estudiante?"
+						class="px-2.5 py-1 text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 transition-colors"
+					>Deshabilitar</button>
+				} else {
+					<button
+						hx-post="/setup/estudiante/toggle"
+						hx-target={ "#est-" + fmt.Sprintf("%d", est.IdEstudiante) }
+						hx-swap="outerHTML"
+						hx-vals={ fmt.Sprintf(`{"id_estudiante":"%d","esta_activo":"1"}`, est.IdEstudiante) }
+						class="px-2.5 py-1 text-xs font-medium text-green-700 bg-green-50 border border-green-200 rounded-md hover:bg-green-100 transition-colors"
+					>Habilitar</button>
+				}
+			</div>
+		</div>
+		<!-- Formulario de edición inline -->
+		<form
+			x-show="editando"
+			x-cloak
+			hx-post="/setup/estudiante/actualizar"
+			hx-target={ "#est-" + fmt.Sprintf("%d", est.IdEstudiante) }
+			hx-swap="outerHTML"
+			class="p-3 space-y-3 bg-indigo-50/60 border-t border-indigo-100"
+		>
+			<input type="hidden" name="id_estudiante" value={ fmt.Sprintf("%d", est.IdEstudiante) }/>
+			<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+				<div>
+					<label class="block text-xs font-medium text-gray-600 mb-1">Apellidos</label>
+					<input
+						type="text"
+						name="apellidos"
+						value={ est.Apellidos }
+						required
+						class="block w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+					/>
+				</div>
+				<div>
+					<label class="block text-xs font-medium text-gray-600 mb-1">Nombres</label>
+					<input
+						type="text"
+						name="nombres"
+						value={ est.Nombres }
+						required
+						class="block w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+					/>
+				</div>
+			</div>
+			<div>
+				<label class="block text-xs font-medium text-gray-600 mb-1">Grado</label>
+				<select
+					name="id_grado"
+					required
+					class="block w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+				>
+					for _, g := range grados {
+						if g.IdGrado == est.IdGrado {
+							<option value={ fmt.Sprintf("%d", g.IdGrado) } selected>{ g.Nombre }</option>
+						} else {
+							<option value={ fmt.Sprintf("%d", g.IdGrado) }>{ g.Nombre }</option>
+						}
+					}
+				</select>
+			</div>
+			<div class="flex gap-2">
+				<button
+					type="submit"
+					class="px-4 py-1.5 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
+				>Guardar</button>
+				<button
+					type="button"
+					@click="editando = false"
+					class="px-4 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+				>Cancelar</button>
+			</div>
+		</form>
+	</div>
+}
+
+templ SetupEstudiantes(grados []models.InfoGrado, estudiantes []models.Estudiante) {
+	@layouts.Layout("Configurar Estudiantes") {
+		<div class="max-w-2xl mx-auto p-4 sm:p-8">
+
+			<!-- Encabezado -->
+			<div class="text-center mb-8">
+				<div class="mx-auto w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mb-4">
+					<svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path>
+					</svg>
+				</div>
+				<h1 class="text-2xl font-bold text-gray-900">Configurar Estudiantes</h1>
+				<p class="mt-2 text-gray-500">Agrega y gestiona los estudiantes del sistema.</p>
+			</div>
+
+			<!-- Formulario para agregar estudiante (colapsable) -->
+			<div
+				x-data="{ abierto: true }"
+				class="bg-white rounded-2xl shadow-sm border border-gray-200 mb-6 overflow-hidden"
+			>
+				<button
+					type="button"
+					@click="abierto = !abierto"
+					class="w-full flex items-center justify-between p-5 text-left hover:bg-gray-50 transition-colors"
+				>
+					<span class="text-base font-semibold text-gray-900">Agregar Estudiante</span>
+					<svg
+						class="w-5 h-5 text-gray-400 transition-transform duration-200"
+						:class="abierto ? 'rotate-180' : ''"
+						fill="none" stroke="currentColor" viewBox="0 0 24 24"
+					>
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+					</svg>
+				</button>
+				<div x-show="abierto" class="px-5 pb-5 border-t border-gray-100">
+					<form
+						hx-post="/setup/estudiante"
+						hx-target="#lista-estudiantes"
+						hx-swap="afterbegin"
+						hx-on::after-request="if(event.detail.successful) this.reset()"
+						class="space-y-4 pt-4"
+					>
+						<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+							<div>
+								<label class="block text-sm font-medium text-gray-700 mb-1">Apellidos</label>
+								<input
+									type="text"
+									name="apellidos"
+									required
+									placeholder="García López"
+									class="block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+								/>
+							</div>
+							<div>
+								<label class="block text-sm font-medium text-gray-700 mb-1">Nombres</label>
+								<input
+									type="text"
+									name="nombres"
+									required
+									placeholder="Juan Carlos"
+									class="block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+								/>
+							</div>
+						</div>
+						<div>
+							<label class="block text-sm font-medium text-gray-700 mb-1">Grado</label>
+							<select
+								name="id_grado"
+								required
+								class="block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+							>
+								for _, grado := range grados {
+									<option value={ fmt.Sprintf("%d", grado.IdGrado) }>{ grado.Nombre }</option>
+								}
+							</select>
+						</div>
+						<button
+							type="submit"
+							class="w-full px-4 py-2 bg-indigo-600 text-white font-medium rounded-md hover:bg-indigo-700"
+						>Agregar Estudiante</button>
+					</form>
+				</div>
+			</div>
+
+			<!-- Lista de estudiantes con tabs por grado -->
+			<div
+				x-data="{ gradoActivo: 0 }"
+				class="bg-white rounded-2xl shadow-sm border border-gray-200 mb-6 overflow-hidden"
+			>
+				<!-- Encabezado del panel -->
+				<div class="p-5 border-b border-gray-100">
+					<div class="flex items-center justify-between mb-4">
+						<h2 class="text-base font-semibold text-gray-900">Estudiantes Registrados</h2>
+						if len(estudiantes) > 0 {
+							{{ activos := 0 }}
+							for _, e := range estudiantes {
+								if e.EstaActivo {
+									{{ activos++ }}
+								}
+							}
+							<span class="text-xs text-gray-400">
+								{ fmt.Sprintf("%d activos", activos) }
+								if len(estudiantes) > activos {
+									{ fmt.Sprintf(" · %d inactivos", len(estudiantes)-activos) }
+								}
+							</span>
+						}
+					</div>
+
+					<!-- Tabs por grado -->
+					<div class="flex flex-wrap gap-1.5">
+						<!-- Tab "Todos" -->
+						{{ totalActivos := 0 }}
+						for _, e := range estudiantes {
+							if e.EstaActivo {
+								{{ totalActivos++ }}
+							}
+						}
+						<button
+							@click="gradoActivo = 0"
+							:class="gradoActivo === 0
+								? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+								: 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'"
+							class="px-3 py-1.5 text-xs font-medium border rounded-lg transition-colors"
+						>
+							Todos
+							<span
+								:class="gradoActivo === 0 ? 'bg-indigo-500 text-white' : 'bg-gray-100 text-gray-500'"
+								class="ml-1.5 px-1.5 py-0.5 rounded-full text-xs font-semibold"
+							>{ fmt.Sprintf("%d", totalActivos) }</span>
+						</button>
+						<!-- Tab por cada grado -->
+						for _, grado := range grados {
+							{{ countGrado := 0 }}
+							for _, e := range estudiantes {
+								if e.IdGrado == grado.IdGrado && e.EstaActivo {
+									{{ countGrado++ }}
+								}
+							}
+							if countGrado > 0 {
+								<button
+									@click={ fmt.Sprintf("gradoActivo = %d", grado.IdGrado) }
+									:class={ fmt.Sprintf("gradoActivo === %d ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'", grado.IdGrado) }
+									class="px-3 py-1.5 text-xs font-medium border rounded-lg transition-colors"
+								>
+									{ grado.Nombre }
+									<span
+										:class={ fmt.Sprintf("gradoActivo === %d ? 'bg-indigo-500 text-white' : 'bg-gray-100 text-gray-500'", grado.IdGrado) }
+										class="ml-1.5 px-1.5 py-0.5 rounded-full text-xs font-semibold"
+									>{ fmt.Sprintf("%d", countGrado) }</span>
+								</button>
+							}
+						}
+					</div>
+				</div>
+
+				<!-- Lista filtrada -->
+				<div class="p-4">
+					<div id="lista-estudiantes" class="space-y-2">
+						if len(estudiantes) == 0 {
+							<p class="text-sm text-gray-400 text-center py-8">Aún no hay estudiantes. Agrega el primero arriba.</p>
+						}
+						for _, est := range estudiantes {
+							<div x-show={ fmt.Sprintf("gradoActivo === 0 || gradoActivo === %d", est.IdGrado) }>
+								@FilaEstudiante(est, grados)
+							</div>
+						}
+					</div>
+
+				</div>
+			</div>
+
+			<!-- Botón continuar -->
+			{{ hayActivos := false }}
+			for _, e := range estudiantes {
+				if e.EstaActivo {
+					{{ hayActivos = true }}
+				}
+			}
+			if hayActivos {
+				<a
+					href="/"
+					class="block w-full text-center px-6 py-3 bg-green-600 text-white font-medium rounded-xl hover:bg-green-700"
+				>
+					Continuar al Sistema →
+				</a>
+			}
+		</div>
+	}
+}

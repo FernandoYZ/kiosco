@@ -1,0 +1,128 @@
+package pages
+
+import (
+	"fmt"
+	"kiosco/internal/models"
+	"kiosco/internal/utils"
+	"kiosco/templates/layouts"
+)
+
+templ VerConsumoSemanal(datos models.DatosConsumoSemanal) {
+	@layouts.Layout("Comprobante - " + datos.NombreEstudiante) {
+		<div class="max-w-2xl mx-auto p-2 sm:p-4">
+			<!-- Botones de acción -->
+			<div class="mb-2 flex justify-between items-center">
+				<a
+					href={ templ.URL("/?fecha=" + utils.FormatearFechaCompleta(datos.FechaInicio) + "&grado=" + fmt.Sprintf("%d", datos.GradoSeleccionado)) }
+					class="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50"
+				>← Volver</a>
+				<button
+			        id="btnCopiar"
+			        data-filename={ "nota-venta-" + datos.NombreEstudiante + ".png" }
+		        onclick="copiarComprobante('comprobante', this.dataset.filename)"
+			        class="px-3 py-1.5 text-xs font-medium text-white bg-gray-800 border border-transparent rounded hover:bg-gray-900 flex items-center gap-1"
+				>
+					<span id="iconoCopiar">📋</span>
+					<span id="textoCopiar">Copiar como imagen</span>
+				</button>
+			</div>
+
+			<div id="comprobante" class="bg-white rounded-lg shadow-lg border-2 border-gray-800 overflow-hidden">
+				<!-- Encabezado estilo nota de venta -->
+				<div class="px-4 py-3 border-b-2 border-gray-800">
+					<div class="text-center">
+						<h1 class="text-xl font-bold text-gray-900 uppercase tracking-wide">Kiosco Escolar</h1>
+						<p class="text-gray-600 text-xs font-semibold mt-0.5">Nota de Venta Semanal</p>
+					</div>
+				</div>
+
+				<!-- Información del estudiante -->
+				<div class="px-4 py-3 border-b-2 border-dashed border-gray-400 bg-gray-50 text-xs">
+					<div class="space-y-1">
+						<div class="flex justify-between">
+							<span class="text-gray-600 font-medium uppercase text-[10px]">Cliente:</span>
+							<span class="font-bold text-gray-900">{ datos.NombreEstudiante }</span>
+						</div>
+						<div class="flex justify-between">
+							<span class="text-gray-600 font-medium uppercase text-[10px]">Periodo:</span>
+							<span class="text-gray-800 font-medium">
+								{ fmt.Sprintf("%d", datos.FechaInicio.Day()) }-{ fmt.Sprintf("%d", datos.FechaFin.Day()) }/{ utils.NombreMes(datos.FechaInicio.Month()) }/{ fmt.Sprintf("%d", datos.FechaInicio.Year()) }
+							</span>
+						</div>
+					</div>
+				</div>
+
+				<!-- Detalle de consumos en 2 columnas -->
+				<div class="px-4 py-3">
+					if len(datos.ConsumosPorDia) > 0 {
+						<div class="grid grid-cols-2 gap-2">
+							for _, dia := range datos.ConsumosPorDia {
+								<div class="border-2 border-gray-300 rounded">
+									<div class="flex justify-between items-center bg-gray-100 px-2 py-1 border-b-2 border-gray-300">
+										<span class="text-xs font-bold text-gray-900 uppercase">{ utils.FormatearFechaLarga(dia.Fecha) }</span>
+										<span class="text-xs font-bold text-gray-900">S/ { utils.FormatearMoneda(dia.Total) }</span>
+									</div>
+									if len(dia.Productos) > 0 {
+										<div class="divide-y divide-gray-100">
+											for _, prod := range dia.Productos {
+												<div class="text-xs px-2 py-1">
+													<div class="flex justify-between items-center">
+														<div class="flex items-center gap-1">
+															<span class="text-gray-700 truncate">{ prod.Nombre }</span>
+															<span class="text-gray-400 text-[10px] flex-shrink-0">× { fmt.Sprintf("%d", prod.Cantidad) }</span>
+														</div>
+														<span class="font-semibold text-gray-900 ml-1 flex-shrink-0">{ utils.FormatearMoneda(prod.Total) }</span>
+													</div>
+												</div>
+											}
+										</div>
+									}
+								</div>
+							}
+						</div>
+					} else {
+						<div class="text-center py-4">
+							<p class="text-xs text-gray-500">No hay consumos en esta semana</p>
+						</div>
+					}
+				</div>
+
+				<!-- Resumen financiero -->
+				<div class="px-4 pb-3">
+					<div class="bg-white rounded border-2 border-gray-800 p-3">
+						<div class="space-y-1.5 text-xs">
+							<div class="flex justify-between py-0.5">
+								<span class="text-gray-700 font-medium uppercase">Subtotal Semana:</span>
+								<span class="font-bold text-gray-900 tabular-nums">S/ { utils.FormatearMoneda(datos.SubTotal) }</span>
+							</div>
+							<div class="flex justify-between py-0.5">
+								<span class="text-gray-700 font-medium uppercase">Deuda Anterior:</span>
+								<span class="font-bold text-gray-900 tabular-nums">S/ { utils.FormatearMoneda(datos.DeudaAnterior) }</span>
+							</div>
+							<div class="flex justify-between py-0.5">
+								<span class="text-gray-700 font-medium uppercase">Pagos Realizados:</span>
+								<span class="font-bold text-gray-900 tabular-nums">- S/ { utils.FormatearMoneda(datos.Pagos) }</span>
+							</div>
+							<div class="pt-2 mt-2 border-t-2 border-gray-800">
+								<div class="flex justify-between items-center">
+									<span class="font-bold text-gray-900 uppercase text-sm">TOTAL A PAGAR:</span>
+									<span class="text-lg font-black text-gray-900 tabular-nums">S/ { utils.FormatearMoneda(datos.Total) }</span>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Pie -->
+				<div class="bg-gray-100 px-3 py-2 border-t-2 border-gray-800">
+					<p class="text-center text-[10px] text-gray-600 font-medium uppercase tracking-wide">
+						Nota de Venta - Generado el { utils.FormatearFechaLarga(datos.FechaInicio) }
+					</p>
+					<p class="text-center text-[9px] text-gray-500 mt-0.5">
+						Gracias por su preferencia
+					</p>
+				</div>
+			</div>
+		</div>
+	}
+}

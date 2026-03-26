@@ -1,0 +1,45 @@
+package layouts
+
+templ Layout(titulo string) {
+	<!DOCTYPE html>
+		<html lang="es-PE">
+			<head>
+				<meta charset="UTF-8"/>
+				<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+				<title>{ titulo }</title>
+
+				<!-- Favicon, CSS y PWA -->
+				<link rel="icon" href="/favicon.webp" type="image/webp"/>
+				<link rel="manifest" href="/manifest.json"/>
+				<meta name="theme-color" content="#4f46e5"/>
+				<meta name="mobile-web-app-capable" content="yes"/>
+				<meta name="apple-mobile-web-app-capable" content="yes"/>
+				<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+				<meta name="apple-mobile-web-app-title" content="Kiosco"/>
+				<link rel="apple-touch-icon" href="/favicon.webp"/>
+				<link href="/dist/styles.css" rel="stylesheet"/>
+
+				<!-- Preload scripts críticos -->
+				<link rel="preload" href="/dist/htmx.min.js" as="script"/>
+				<link rel="preload" href="/dist/canvas.min.js" as="script"/>
+				<link rel="preload" href="/dist/alpine.min.js" as="script"/>
+				<link rel="preload" href="/dist/bundle.min.js" as="script"/>
+
+				<!-- HTMX para interactividad -->
+				<script src="/dist/htmx.min.js"></script>
+
+			</head>
+			<body>
+				<!-- Contenido principal -->
+				<main>
+					{ children... }
+				</main>
+
+				<!-- scripts defer -->
+				<script defer src="/dist/canvas.min.js"></script>
+				<script defer src="/dist/bundle.min.js"></script>
+				<script defer src="/dist/alpine.min.js"></script>
+
+			</body>
+		</html>
+}
