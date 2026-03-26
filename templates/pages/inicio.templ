@@ -72,29 +72,6 @@ templ Inicio(datos models.DatosVistaPrincipal) {
 					</nav>
 				</div>
 
-				<!-- Toggle de Días Hábiles con Alpine.js -->
-				<div
-					class="mt-4 p-3 bg-white rounded-lg border border-gray-200"
-					x-data={ fmt.Sprintf("toggleDias('%s')", datos.DiasDeshabilitados) }
-				>
-					<div class="flex flex-wrap gap-x-6 gap-y-3 items-center">
-						<span class="text-sm font-medium text-gray-700">Días de la semana:</span>
-						for _, dia := range datos.DiasConEstado {
-							<label class="flex items-center gap-2 cursor-pointer">
-								<input
-									type="checkbox"
-									class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-									:checked={ "!estaDeshabilitado('" + utils.FormatearFechaCompleta(dia.Fecha) + "')" }
-									@change={ "toggle('" + utils.FormatearFechaCompleta(dia.Fecha) + "')" }
-								/>
-								<span
-									class="text-sm"
-									:class={ "estaDeshabilitado('" + utils.FormatearFechaCompleta(dia.Fecha) + "') ? 'text-gray-400 line-through' : 'text-gray-800'" }
-								>{ utils.FormatearFecha(dia.Fecha) }</span>
-							</label>
-						}
-					</div>
-				</div>
 			</div>
 
 			<!-- Tabla de Consumos -->
