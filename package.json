@@ -1,0 +1,15 @@
+{
+  "scripts": {
+    "css:dev": "tailwindcss -i ./assets/main.css -o ./public/dist/styles.css --watch",
+    "css:build": "tailwindcss -i ./assets/main.css -o ./public/dist/styles.css --minify",
+    "js:alpine": "curl -L https://cdn.jsdelivr.net/npm/alpinejs@3.15.4/dist/cdn.min.js -o public/dist/alpine.min.js",
+    "js:htmx": "curl -L https://cdnjs.cloudflare.com/ajax/libs/htmx/2.0.7/htmx.min.js -o public/dist/htmx.min.js",
+    "js:canvas": "curl -L https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js -o public/dist/canvas.min.js",
+    "js:build": "bun build assets/main.js --minify --outfile=public/dist/bundle.min.js",
+    "start:static": "bun css:build && bun js:alpine && bun js:htmx && bun js:canvas && bun js:build"
+  },
+  "dependencies": {
+    "@tailwindcss/cli": "^4.2.1",
+    "tailwindcss": "^4.2.1"
+  }
+}

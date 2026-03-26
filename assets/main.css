@@ -1,6 +1,10 @@
 @import "tailwindcss";
+@import "./font.css";
 
-/* Colores personalizados compatibles con html2canvas */
+@view-transition {
+  navigation: auto;
+}
+
 @theme {
     --color-primario: #4f46e5;
     --color-primario-dark: #4338ca;
@@ -47,6 +51,9 @@
 html {
     scroll-behavior: smooth;
 }
+
+/* Alpine.js: ocultar elementos con x-cloak antes de que Alpine inicialice */
+[x-cloak] { display: none !important; }
 
 /* Mejorar performance de transiciones */
 a, button, input, label {

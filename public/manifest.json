@@ -1,0 +1,21 @@
+{
+  "name": "Kiosco Escolar",
+  "short_name": "Kiosco",
+  "description": "Sistema de gestión de consumos y pagos del kiosco escolar",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#4f46e5",
+  "background_color": "#ffffff",
+  "lang": "es-PE",
+  "icons": [
+    {
+      "src": "/favicon.webp",
+      "sizes": "any",
+      "type": "image/webp",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["education", "productivity"]
+}
