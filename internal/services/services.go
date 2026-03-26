@@ -14,9 +14,9 @@ type Servicio struct {
 	Repo *repositories.Repositorio
 }
 
-// NuevoServicio crea una nueva instancia del servicio
-func NuevoServicio(repo *repositories.Repositorio) *Servicio {
-	return &Servicio{Repo: repo}
+// NuevoServicio crea una instancia del servicio con su repositorio.
+func NuevoServicio() *Servicio {
+	return &Servicio{Repo: repositories.NuevoRepositorio()}
 }
 
 // ObtenerDatosVistaPrincipal prepara todos los datos para la vista principal
