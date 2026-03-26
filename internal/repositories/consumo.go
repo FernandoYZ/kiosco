@@ -8,15 +8,18 @@ import (
 
 // ObtenerConsumosSemana retorna los consumos de una semana específica
 func (r *Repositorio) ObtenerConsumosSemana(fechaInicio, fechaFin time.Time) ([]models.Consumo, error) {
+	fechaInicioStr := fechaInicio.Format("2006-01-02")
+	fechaFinStr := fechaFin.Format("2006-01-02")
+
 	query := `
-		SELECT IdConsumo, IdEstudiante, IdProducto, Cantidad,
-		       PrecioUnitarioVenta, TotalLinea, FechaConsumo
-		FROM Consumos
-		WHERE FechaConsumo BETWEEN $1 AND $2
-		ORDER BY FechaConsumo, IdEstudiante
+		SELECT id_consumo, id_estudiante, id_producto, cantidad,
+		       precio_unitario_venta, total_linea, fecha_consumo
+		FROM consumos
+		WHERE fecha_consumo BETWEEN ? AND ?
+		ORDER BY fecha_consumo, id_estudiante
 	`
 
-	rows, err := r.db.Query(query, fechaInicio, fechaFin)
+	rows, err := r.db.Query(query, fechaInicioStr, fechaFinStr)
 	if err != nil {
 		return nil, err
 	}
@@ -33,31 +36,27 @@ func (r *Repositorio) ObtenerConsumosSemana(fechaInicio, fechaFin time.Time) ([]
 		consumos = append(consumos, c)
 	}
 
-	return consumos, nil
+	return consumos, rows.Err()
 }
 
 // ObtenerDeudaAnterior calcula la deuda anterior de un estudiante hasta una fecha
 func (r *Repositorio) ObtenerDeudaAnterior(idEstudiante int, fechaLimite time.Time) (float64, error) {
-	// Total consumos antes de la fecha límite
+	fechaLimiteStr := fechaLimite.Format("2006-01-02")
+
 	var totalConsumos sql.NullFloat64
-	queryConsumos := `
-		SELECT SUM(TotalLinea)
-		FROM Consumos
-		WHERE IdEstudiante = $1 AND FechaConsumo < $2
-	`
-	err := r.db.QueryRow(queryConsumos, idEstudiante, fechaLimite).Scan(&totalConsumos)
+	err := r.db.QueryRow(`
+		SELECT SUM(total_linea) FROM consumos
+		WHERE id_estudiante = ? AND fecha_consumo < ?
+	`, idEstudiante, fechaLimiteStr).Scan(&totalConsumos)
 	if err != nil && err != sql.ErrNoRows {
 		return 0, err
 	}
 
-	// Total pagos antes de la fecha límite
 	var totalPagos sql.NullFloat64
-	queryPagos := `
-		SELECT SUM(Monto)
-		FROM Pagos
-		WHERE IdEstudiante = $1 AND FechaPago < $2
-	`
-	err = r.db.QueryRow(queryPagos, idEstudiante, fechaLimite).Scan(&totalPagos)
+	err = r.db.QueryRow(`
+		SELECT SUM(monto) FROM pagos
+		WHERE id_estudiante = ? AND fecha_pago < ?
+	`, idEstudiante, fechaLimiteStr).Scan(&totalPagos)
 	if err != nil && err != sql.ErrNoRows {
 		return 0, err
 	}
@@ -66,7 +65,6 @@ func (r *Repositorio) ObtenerDeudaAnterior(idEstudiante int, fechaLimite time.Ti
 	if totalConsumos.Valid {
 		consumos = totalConsumos.Float64
 	}
-
 	pagos := 0.0
 	if totalPagos.Valid {
 		pagos = totalPagos.Float64
@@ -75,38 +73,35 @@ func (r *Repositorio) ObtenerDeudaAnterior(idEstudiante int, fechaLimite time.Ti
 	return consumos - pagos, nil
 }
 
-// RegistrarConsumo inserta un nuevo consumo
+// RegistrarConsumo inserta un nuevo consumo (total_linea es GENERATED, no se inserta)
 func (r *Repositorio) RegistrarConsumo(consumo models.Consumo) error {
-	query := `
-		INSERT INTO Consumos (IdEstudiante, IdProducto, Cantidad, PrecioUnitarioVenta, TotalLinea, FechaConsumo)
-		VALUES ($1, $2, $3, $4, $5, $6)
-	`
-	_, err := r.db.Exec(query, consumo.IdEstudiante, consumo.IdProducto, consumo.Cantidad,
-		consumo.PrecioUnitarioVenta, consumo.TotalLinea, consumo.FechaConsumo)
+	fechaStr := consumo.FechaConsumo.Format("2006-01-02")
+	_, err := r.db.Exec(`
+		INSERT INTO consumos (id_estudiante, id_producto, cantidad, precio_unitario_venta, fecha_consumo)
+		VALUES (?, ?, ?, ?, ?)
+	`, consumo.IdEstudiante, consumo.IdProducto, consumo.Cantidad,
+		consumo.PrecioUnitarioVenta, fechaStr)
 	return err
 }
 
-// ActualizarConsumo actualiza la cantidad de un consumo existente
+// ActualizarConsumo actualiza, inserta o elimina un consumo según la cantidad
 func (r *Repositorio) ActualizarConsumo(idEstudiante, idProducto int, fecha time.Time, cantidad int, precioUnitario float64) error {
-	// Primero verificamos si existe el consumo
+	fechaStr := fecha.Format("2006-01-02")
+
 	var idConsumo int64
-	queryBuscar := `
-		SELECT IdConsumo
-		FROM Consumos
-		WHERE IdEstudiante = $1 AND IdProducto = $2 AND FechaConsumo = $3
+	err := r.db.QueryRow(`
+		SELECT id_consumo FROM consumos
+		WHERE id_estudiante = ? AND id_producto = ? AND fecha_consumo = ?
 		LIMIT 1
-	`
-	err := r.db.QueryRow(queryBuscar, idEstudiante, idProducto, fecha).Scan(&idConsumo)
+	`, idEstudiante, idProducto, fechaStr).Scan(&idConsumo)
 
 	if err == sql.ErrNoRows {
-		// No existe, insertamos nuevo
 		if cantidad > 0 {
 			return r.RegistrarConsumo(models.Consumo{
 				IdEstudiante:        idEstudiante,
 				IdProducto:          idProducto,
 				Cantidad:            cantidad,
 				PrecioUnitarioVenta: precioUnitario,
-				TotalLinea:          float64(cantidad) * precioUnitario,
 				FechaConsumo:        fecha,
 			})
 		}
@@ -115,40 +110,31 @@ func (r *Repositorio) ActualizarConsumo(idEstudiante, idProducto int, fecha time
 		return err
 	}
 
-	// Existe, actualizamos o eliminamos
 	if cantidad <= 0 {
-		// Eliminar si la cantidad es 0
-		queryEliminar := `DELETE FROM Consumos WHERE IdConsumo = $1`
-		_, err = r.db.Exec(queryEliminar, idConsumo)
+		_, err = r.db.Exec(`DELETE FROM consumos WHERE id_consumo = ?`, idConsumo)
 		return err
 	}
 
-	// Actualizar
-	totalLinea := float64(cantidad) * precioUnitario
-	queryActualizar := `
-		UPDATE Consumos
-		SET Cantidad = $1, PrecioUnitarioVenta = $2, TotalLinea = $3
-		WHERE IdConsumo = $4
-	`
-	_, err = r.db.Exec(queryActualizar, cantidad, precioUnitario, totalLinea, idConsumo)
+	// total_linea es GENERATED, solo actualizamos cantidad y precio
+	_, err = r.db.Exec(`
+		UPDATE consumos SET cantidad = ?, precio_unitario_venta = ?
+		WHERE id_consumo = ?
+	`, cantidad, precioUnitario, idConsumo)
 	return err
 }
 
-// ObtenerConsumoExistente verifica si existe un consumo específico y retorna la cantidad
+// ObtenerConsumoExistente verifica si existe un consumo y retorna la cantidad
 func (r *Repositorio) ObtenerConsumoExistente(idEstudiante, idProducto int, fecha time.Time) (int, error) {
+	fechaStr := fecha.Format("2006-01-02")
+
 	var cantidad int
-	query := `
-		SELECT Cantidad
-		FROM Consumos
-		WHERE IdEstudiante = $1 AND IdProducto = $2 AND FechaConsumo = $3
+	err := r.db.QueryRow(`
+		SELECT cantidad FROM consumos
+		WHERE id_estudiante = ? AND id_producto = ? AND fecha_consumo = ?
 		LIMIT 1
-	`
-	err := r.db.QueryRow(query, idEstudiante, idProducto, fecha).Scan(&cantidad)
+	`, idEstudiante, idProducto, fechaStr).Scan(&cantidad)
 	if err == sql.ErrNoRows {
 		return 0, nil
 	}
-	if err != nil {
-		return 0, err
-	}
-	return cantidad, nil
+	return cantidad, err
 }

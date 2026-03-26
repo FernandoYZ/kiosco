@@ -3,35 +3,27 @@ package controllers
 import (
 	"fmt"
 	"kiosco/internal/models"
+	"kiosco/templates/pages"
 	"log"
 	"net/http"
 	"strconv"
 	"time"
 )
 
-// ManejadorRegistrarConsumo procesa el formulario de registro de consumo
+// RegistrarConsumo procesa el formulario de registro de consumo
 func (m *Controlador) RegistrarConsumo(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Método no permitido", http.StatusMethodNotAllowed)
 		return
 	}
 
-	// Parsear datos del formulario (soporta form-urlencoded y multipart)
-	err := r.ParseForm()
-	if err != nil {
-		// Intentar con multipart si falla
-		err = r.ParseMultipartForm(10 << 20) // 10 MB max
-		if err != nil {
-			log.Printf("Error al parsear formulario: %v", err)
-			http.Error(w, "Error al procesar formulario", http.StatusBadRequest)
-			return
-		}
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "Error al procesar formulario", http.StatusBadRequest)
+		return
 	}
 
-	idEstudianteStr := r.FormValue("id_estudiante")
-	idEstudiante, err := strconv.Atoi(idEstudianteStr)
+	idEstudiante, err := strconv.Atoi(r.FormValue("id_estudiante"))
 	if err != nil {
-		log.Printf("Error al convertir id_estudiante '%s': %v", idEstudianteStr, err)
 		http.Error(w, "ID de estudiante inválido", http.StatusBadRequest)
 		return
 	}
@@ -55,22 +47,17 @@ func (m *Controlador) RegistrarConsumo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Registrar el consumo
-	err = m.servicio.RegistrarConsumoDesdeFormulario(idEstudiante, idProducto, cantidad, fecha)
-	if err != nil {
+	if err := m.servicio.RegistrarConsumoDesdeFormulario(idEstudiante, idProducto, cantidad, fecha); err != nil {
 		log.Printf("Error al registrar consumo: %v", err)
 		http.Error(w, "Error al registrar consumo", http.StatusInternalServerError)
 		return
 	}
 
-	// Obtener el grado para mantenerlo en la redirección
 	grado := r.FormValue("grado")
 	urlRedireccion := "/?fecha=" + fechaStr
 	if grado != "" {
 		urlRedireccion += "&grado=" + grado
 	}
-
-	// Redireccionar de vuelta a la vista principal
 	http.Redirect(w, r, urlRedireccion, http.StatusSeeOther)
 }
 
@@ -96,8 +83,7 @@ func (m *Controlador) EditarConsumos(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Obtener datos del estudiante
-	estudiantes, err := m.servicio.Repo.ObtenerEstudiantesPorGrado(0) // Todos para buscar
+	estudiantes, err := m.servicio.Repo.ObtenerEstudiantesPorGrado(0)
 	if err != nil {
 		http.Error(w, "Error al obtener estudiante", http.StatusInternalServerError)
 		return
@@ -111,14 +97,12 @@ func (m *Controlador) EditarConsumos(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Obtener productos
 	productos, err := m.servicio.Repo.ObtenerProductosActivos()
 	if err != nil {
 		http.Error(w, "Error al obtener productos", http.StatusInternalServerError)
 		return
 	}
 
-	// Obtener consumos existentes
 	fechaInicio := time.Date(fecha.Year(), fecha.Month(), fecha.Day(), 0, 0, 0, 0, fecha.Location())
 	fechaFin := time.Date(fecha.Year(), fecha.Month(), fecha.Day(), 23, 59, 59, 0, fecha.Location())
 	consumos, err := m.servicio.Repo.ObtenerConsumosSemana(fechaInicio, fechaFin)
@@ -127,7 +111,6 @@ func (m *Controlador) EditarConsumos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Crear mapa de consumos
 	consumosPorDia := make(map[int]map[string]map[int]int)
 	for _, c := range consumos {
 		if consumosPorDia[c.IdEstudiante] == nil {
@@ -149,18 +132,19 @@ func (m *Controlador) EditarConsumos(w http.ResponseWriter, r *http.Request) {
 		GradoSeleccionado: idGrado,
 	}
 
-	m.renderizar(w, "editar_consumos.tmpl", datos)
+	if err := pages.EditarConsumos(datos).Render(r.Context(), w); err != nil {
+		log.Printf("Error al renderizar editar_consumos: %v", err)
+	}
 }
 
-// ManejadorGuardarConsumosDia guarda todos los consumos de un día
+// GuardarConsumosDia guarda todos los consumos de un día
 func (m *Controlador) GuardarConsumosDia(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Método no permitido", http.StatusMethodNotAllowed)
 		return
 	}
 
-	err := r.ParseForm()
-	if err != nil {
+	if err := r.ParseForm(); err != nil {
 		http.Error(w, "Error al procesar formulario", http.StatusBadRequest)
 		return
 	}
@@ -180,33 +164,26 @@ func (m *Controlador) GuardarConsumosDia(w http.ResponseWriter, r *http.Request)
 
 	grado := r.FormValue("grado")
 
-	// Obtener productos para procesar
 	productos, err := m.servicio.Repo.ObtenerProductosActivos()
 	if err != nil {
 		http.Error(w, "Error al obtener productos", http.StatusInternalServerError)
 		return
 	}
 
-	// Procesar cada producto
 	for _, producto := range productos {
 		cantidadStr := r.FormValue(fmt.Sprintf("cantidad_%d", producto.IdProducto))
 		cantidad, err := strconv.Atoi(cantidadStr)
 		if err != nil {
 			cantidad = 0
 		}
-
-		// Actualizar consumo
-		err = m.servicio.RegistrarConsumoDesdeFormulario(idEstudiante, producto.IdProducto, cantidad, fecha)
-		if err != nil {
+		if err := m.servicio.RegistrarConsumoDesdeFormulario(idEstudiante, producto.IdProducto, cantidad, fecha); err != nil {
 			log.Printf("Error al registrar consumo producto %d: %v", producto.IdProducto, err)
 		}
 	}
 
-	// Redireccionar
 	urlRedireccion := "/?fecha=" + fechaStr
 	if grado != "" {
 		urlRedireccion += "&grado=" + grado
 	}
-
 	http.Redirect(w, r, urlRedireccion, http.StatusSeeOther)
 }

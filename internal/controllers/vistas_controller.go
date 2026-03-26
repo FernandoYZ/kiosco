@@ -3,6 +3,7 @@ package controllers
 import (
 	"kiosco/internal/models"
 	"kiosco/internal/utils"
+	"kiosco/templates/pages"
 	"log"
 	"net/http"
 	"strconv"
@@ -13,14 +14,12 @@ import (
 func (m *Controlador) Inicio(w http.ResponseWriter, r *http.Request) {
 	fechaInicio, fechaFin := utils.ObtenerSemanaActual()
 
-	// Verificar si hay parámetros de fecha en la URL
 	if fechaParam := r.URL.Query().Get("fecha"); fechaParam != "" {
 		if fecha, err := time.Parse("2006-01-02", fechaParam); err == nil {
 			fechaInicio, fechaFin = utils.CalcularSemanaDesdeFecha(fecha)
 		}
 	}
 
-	// Verificar si hay filtro de grado (por defecto primer grado = 1)
 	idGrado := 1
 	if gradoParam := r.URL.Query().Get("grado"); gradoParam != "" {
 		if grado, err := strconv.Atoi(gradoParam); err == nil {
@@ -28,7 +27,6 @@ func (m *Controlador) Inicio(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Obtener días deshabilitados del parámetro URL
 	diasDeshabilitados := r.URL.Query().Get("dias_off")
 
 	datos, err := m.servicio.ObtenerDatosVistaPrincipal(fechaInicio, fechaFin, idGrado, diasDeshabilitados)
@@ -38,10 +36,21 @@ func (m *Controlador) Inicio(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m.renderizar(w, "index.tmpl", datos)
+	// Si no hay estudiantes en absoluto, redirigir al setup
+	if len(datos.EstudiantesConData) == 0 {
+		todos, _ := m.servicio.Repo.ObtenerEstudiantesActivos()
+		if len(todos) == 0 {
+			http.Redirect(w, r, "/setup", http.StatusFound)
+			return
+		}
+	}
+
+	if err := pages.Inicio(*datos).Render(r.Context(), w); err != nil {
+		log.Printf("Error al renderizar inicio: %v", err)
+	}
 }
 
-// ManejadorVerConsumoSemanal muestra el comprobante de consumo semanal de un estudiante
+// VerConsumoSemanal muestra el comprobante de consumo semanal de un estudiante
 func (m *Controlador) VerConsumoSemanal(w http.ResponseWriter, r *http.Request) {
 	idEstudiante, err := strconv.Atoi(r.URL.Query().Get("id_estudiante"))
 	if err != nil {
@@ -63,10 +72,8 @@ func (m *Controlador) VerConsumoSemanal(w http.ResponseWriter, r *http.Request) 
 		}
 	}
 
-	// Calcular la semana
 	fechaInicio, fechaFin := utils.CalcularSemanaDesdeFecha(fecha)
 
-	// Obtener datos del estudiante
 	estudiantes, err := m.servicio.Repo.ObtenerEstudiantesPorGrado(0)
 	if err != nil {
 		http.Error(w, "Error al obtener estudiante", http.StatusInternalServerError)
@@ -81,27 +88,23 @@ func (m *Controlador) VerConsumoSemanal(w http.ResponseWriter, r *http.Request) 
 		}
 	}
 
-	// Obtener consumos de la semana
 	consumos, err := m.servicio.Repo.ObtenerConsumosSemana(fechaInicio, fechaFin)
 	if err != nil {
 		http.Error(w, "Error al obtener consumos", http.StatusInternalServerError)
 		return
 	}
 
-	// Obtener productos
 	productos, err := m.servicio.Repo.ObtenerProductosActivos()
 	if err != nil {
 		http.Error(w, "Error al obtener productos", http.StatusInternalServerError)
 		return
 	}
 
-	// Crear mapa de productos para búsqueda rápida
 	productosMap := make(map[int]models.Producto)
 	for _, p := range productos {
 		productosMap[p.IdProducto] = p
 	}
 
-	// Organizar consumos por día
 	diasConsumo := make(map[string][]models.ConsumoProducto)
 	totalesPorDia := make(map[string]float64)
 
@@ -109,49 +112,37 @@ func (m *Controlador) VerConsumoSemanal(w http.ResponseWriter, r *http.Request) 
 		if c.IdEstudiante != idEstudiante {
 			continue
 		}
-
 		fechaKey := c.FechaConsumo.Format("2006-01-02")
 		producto := productosMap[c.IdProducto]
-
-		consumoProducto := models.ConsumoProducto{
+		diasConsumo[fechaKey] = append(diasConsumo[fechaKey], models.ConsumoProducto{
 			Nombre:   producto.Nombre,
 			Cantidad: c.Cantidad,
 			Precio:   c.PrecioUnitarioVenta,
 			Total:    c.TotalLinea,
-		}
-
-		diasConsumo[fechaKey] = append(diasConsumo[fechaKey], consumoProducto)
+		})
 		totalesPorDia[fechaKey] += c.TotalLinea
 	}
 
-	// Crear lista de consumos diarios en orden
 	var consumosPorDia []models.ConsumoDiario
 	currentDate := fechaInicio
 	subTotal := 0.0
 
-	for currentDate.Before(fechaFin) || currentDate.Equal(fechaFin) {
+	for !currentDate.After(fechaFin) {
 		fechaKey := currentDate.Format("2006-01-02")
-
 		consumoDia := models.ConsumoDiario{
 			Fecha:     currentDate,
 			Productos: diasConsumo[fechaKey],
 			Total:     totalesPorDia[fechaKey],
 		}
-
-		// Solo agregar días con consumo
 		if len(consumoDia.Productos) > 0 {
 			consumosPorDia = append(consumosPorDia, consumoDia)
 			subTotal += consumoDia.Total
 		}
-
 		currentDate = currentDate.AddDate(0, 0, 1)
 	}
 
-	// Obtener deuda anterior y pagos
 	deudaAnterior, _ := m.servicio.Repo.ObtenerDeudaAnterior(idEstudiante, fechaInicio)
 	pagos, _ := m.servicio.Repo.ObtenerPagosSemana(idEstudiante, fechaInicio, fechaFin)
-
-	total := subTotal + deudaAnterior - pagos
 
 	datos := models.DatosConsumoSemanal{
 		IdEstudiante:      idEstudiante,
@@ -162,9 +153,11 @@ func (m *Controlador) VerConsumoSemanal(w http.ResponseWriter, r *http.Request) 
 		SubTotal:          subTotal,
 		DeudaAnterior:     deudaAnterior,
 		Pagos:             pagos,
-		Total:             total,
+		Total:             subTotal + deudaAnterior - pagos,
 		GradoSeleccionado: idGrado,
 	}
 
-	m.renderizar(w, "ver_consumo_semanal.tmpl", datos)
+	if err := pages.VerConsumoSemanal(datos).Render(r.Context(), w); err != nil {
+		log.Printf("Error al renderizar comprobante: %v", err)
+	}
 }

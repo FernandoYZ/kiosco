@@ -4,21 +4,21 @@ import (
 	"fmt"
 	"kiosco/internal/models"
 	"kiosco/internal/utils"
+	"kiosco/templates/pages"
 	"log"
 	"net/http"
 	"strconv"
 	"time"
 )
 
-// ManejadorRegistrarPago procesa el formulario de registro de pago
+// RegistrarPago procesa el formulario de registro de pago
 func (m *Controlador) RegistrarPago(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Método no permitido", http.StatusMethodNotAllowed)
 		return
 	}
 
-	err := r.ParseForm()
-	if err != nil {
+	if err := r.ParseForm(); err != nil {
 		http.Error(w, "Error al procesar formulario", http.StatusBadRequest)
 		return
 	}
@@ -38,50 +38,42 @@ func (m *Controlador) RegistrarPago(w http.ResponseWriter, r *http.Request) {
 	fechaStr := r.FormValue("fecha")
 	fecha, err := time.Parse("2006-01-02", fechaStr)
 	if err != nil {
-		fecha = time.Now() // Si no hay fecha, usar la actual
+		fecha = time.Now()
 	}
 
-	// Permitir especificar fecha_pago diferente (para la vista de editar pagos)
-	fechaPagoStr := r.FormValue("fecha_pago")
-	fechaPago := fecha // Por defecto usar la fecha de la semana
-	if fechaPagoStr != "" {
+	fechaPago := fecha
+	if fechaPagoStr := r.FormValue("fecha_pago"); fechaPagoStr != "" {
 		if fp, err := time.Parse("2006-01-02", fechaPagoStr); err == nil {
 			fechaPago = fp
 		}
 	}
 
-	// Registrar el pago con la fecha especificada
-	err = m.servicio.RegistrarPagoDesdeFormulario(idEstudiante, monto, fechaPago)
-	if err != nil {
+	if err := m.servicio.RegistrarPagoDesdeFormulario(idEstudiante, monto, fechaPago); err != nil {
 		log.Printf("Error al registrar pago: %v", err)
 		http.Error(w, "Error al registrar pago: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// Obtener el grado para mantenerlo en la redirección
 	grado := r.FormValue("grado")
 	redirect := r.FormValue("redirect")
 
 	var urlRedireccion string
 	if redirect == "editar-pagos" {
-		// Redirigir a la vista de editar pagos
 		urlRedireccion = fmt.Sprintf("/editar-pagos?id_estudiante=%d&fecha=%s", idEstudiante, fechaStr)
 		if grado != "" {
 			urlRedireccion += "&grado=" + grado
 		}
 	} else {
-		// Redirigir a la vista principal
 		urlRedireccion = "/?fecha=" + fechaStr
 		if grado != "" {
 			urlRedireccion += "&grado=" + grado
 		}
 	}
 
-	// Redireccionar de vuelta
 	http.Redirect(w, r, urlRedireccion, http.StatusSeeOther)
 }
 
-// ManejadorEditarPagos muestra la vista para editar pagos de una semana
+// EditarPagos muestra la vista para editar pagos de una semana
 func (m *Controlador) EditarPagos(w http.ResponseWriter, r *http.Request) {
 	idEstudiante, err := strconv.Atoi(r.URL.Query().Get("id_estudiante"))
 	if err != nil {
@@ -103,11 +95,9 @@ func (m *Controlador) EditarPagos(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Calcular la semana
 	fechaInicio, fechaFin := utils.CalcularSemanaDesdeFecha(fecha)
 
-	// Obtener datos del estudiante
-	estudiantes, err := m.servicio.Repo.ObtenerEstudiantesPorGrado(0) // Todos para buscar
+	estudiantes, err := m.servicio.Repo.ObtenerEstudiantesPorGrado(0)
 	if err != nil {
 		http.Error(w, "Error al obtener estudiante", http.StatusInternalServerError)
 		return
@@ -121,14 +111,12 @@ func (m *Controlador) EditarPagos(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Obtener pagos de la semana
 	pagos, err := m.servicio.Repo.ObtenerPagosSemanaDetalle(idEstudiante, fechaInicio, fechaFin)
 	if err != nil {
 		http.Error(w, "Error al obtener pagos", http.StatusInternalServerError)
 		return
 	}
 
-	// Calcular total de pagos
 	totalPagos := 0.0
 	for _, p := range pagos {
 		totalPagos += p.Monto
@@ -144,18 +132,19 @@ func (m *Controlador) EditarPagos(w http.ResponseWriter, r *http.Request) {
 		GradoSeleccionado: idGrado,
 	}
 
-	m.renderizar(w, "editar_pagos.tmpl", datos)
+	if err := pages.EditarPagos(datos).Render(r.Context(), w); err != nil {
+		log.Printf("Error al renderizar editar_pagos: %v", err)
+	}
 }
 
-// ManejadorEliminarPago elimina un pago específico
+// EliminarPago elimina un pago; soporta respuesta HTMX o redirect normal
 func (m *Controlador) EliminarPago(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Método no permitido", http.StatusMethodNotAllowed)
 		return
 	}
 
-	err := r.ParseForm()
-	if err != nil {
+	if err := r.ParseForm(); err != nil {
 		http.Error(w, "Error al procesar formulario", http.StatusBadRequest)
 		return
 	}
@@ -166,15 +155,18 @@ func (m *Controlador) EliminarPago(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Eliminar el pago
-	err = m.servicio.Repo.EliminarPago(idPago)
-	if err != nil {
+	if err := m.servicio.Repo.EliminarPago(idPago); err != nil {
 		log.Printf("Error al eliminar pago: %v", err)
 		http.Error(w, "Error al eliminar pago", http.StatusInternalServerError)
 		return
 	}
 
-	// Redirigir de vuelta a la vista de editar pagos
+	// HTMX: retornar respuesta vacía para que el elemento desaparezca del DOM
+	if r.Header.Get("HX-Request") == "true" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
 	idEstudiante := r.FormValue("id_estudiante")
 	fechaStr := r.FormValue("fecha")
 	grado := r.FormValue("grado")
@@ -183,6 +175,5 @@ func (m *Controlador) EliminarPago(w http.ResponseWriter, r *http.Request) {
 	if grado != "" {
 		urlRedireccion += "&grado=" + grado
 	}
-
 	http.Redirect(w, r, urlRedireccion, http.StatusSeeOther)
 }
