@@ -95,23 +95,6 @@ func VerificarToken(token string) (int, bool) {
 	return idUsuario, true
 }
 
-// HashPassword genera un hash Argon2id del password.
-// Formato PHC: $argon2id$v=19$m=...,t=...,p=...$<salt>$<hash>
-func HashPassword(password string) (string, error) {
-	salt := make([]byte, argonSaltLen)
-	if _, err := rand.Read(salt); err != nil {
-		return "", err
-	}
-
-	hash := argon2.IDKey([]byte(password), salt, argonIter, argonMemory, argonThreads, argonKeyLen)
-
-	return fmt.Sprintf("$argon2id$v=19$m=%d,t=%d,p=%d$%s$%s",
-		argonMemory, argonIter, argonThreads,
-		base64.RawStdEncoding.EncodeToString(salt),
-		base64.RawStdEncoding.EncodeToString(hash),
-	), nil
-}
-
 // VerificarPassword compara un password contra un hash Argon2id almacenado.
 func VerificarPassword(hashAlmacenado, password string) bool {
 	partes := strings.Split(hashAlmacenado, "$")

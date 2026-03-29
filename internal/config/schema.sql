@@ -84,5 +84,10 @@ INSERT INTO productos (nombre, precio_unitario) VALUES
 ('Chaufa', 3.50),
 ('Comida 2', 3.00);
 
+-- Agregar usuario de prueba
+INSERT INTO usuarios (usuario, contrasenha) VALUES
+('prueba', '$argon2id$v=19$m=16,t=3,p=1$bG1tMWowTEZMVTVSVU5VYg$9Ib8jWAgKLD1PSaZoIdBBA');
+-- contraseña: pa$$w0rD
+
 -- database: ..\database\database.db 
 -- Directorio al ejecutar el binario
