@@ -1,7 +1,21 @@
 # Kiosco - Sistema de Control de Consumo Escolar
 
-Sistema web para gestionar consumos, pagos y deudas de estudiantes en kioscos escolares. Desarrollado en Go puro con SQLite embebido — sin frameworks, sin Docker, un solo binario autocontenido.
+Sistema web ligero y eficiente para gestionar consumos, pagos y deudas de estudiantes en kioscos escolares. Construido con **Go** y **SQLite** embebido: sin dependencias externas pesadas, sin Docker, un solo binario autocontenido.
 
+---
+### Credenciales de Acceso
+Para probar el sistema sin configuración previa, utiliza:
+| Usuario | Contraseña |
+|------|------------|
+| prueba | pa$$w0rD |
+
+> [!IMPORTANT]
+> Estas credenciales son solo para pruebas. En un entorno real, debes cambiarlas inmediatamente en el archivo `internal/config/schema.sql`.
+
+> [!NOTE]
+> El sistema crea automáticamente estos accesos en el primer arranque si no detecta una base de datos existente.
+
+---
 ## Características principales
 
 - **Vista semanal:** tabla de consumos por estudiante, grado y semana seleccionada
@@ -15,14 +29,30 @@ Sistema web para gestionar consumos, pagos y deudas de estudiantes en kioscos es
 - **Autenticación con sesiones firmadas:** cookies HMAC-SHA256, Argon2id para contraseñas
 - **Binario autocontenido:** estáticos y schema SQL embebidos en el binario
 
-## Vista Previa del Sistema
+> [!TIP]
+> Este sistema está pensado para entornos escolares con recursos limitados: instalación simple y sin dependencias externas.
 
-### Vista Principal - Control Semanal
-![Vista Principal](assets/images/captura_index.png)
+---
+## Vista previa del sistema
 
-### Edición de Consumos Diarios
-![Editar Productos](assets/images/captura_editar_producto.png)
+### Vista general
+<p align="center">
+  <img src="assets/images/captura_index.png" width="800"/>
+</p>
 
+---
+
+### Funcionalidades del sistema
+
+| **Inicio de sesión** | **Productos** |
+|-------------------|-------------|
+| <img src="assets/images/captura_login.png" width="100%"> | <img src="assets/images/captura_agregar_producto.png" width="100%"> |
+
+| **Estudiantes** | **Consumos** |
+|---------------|------------|
+| <img src="assets/images/captura_setup_estudiantes.png" width="100%"> | <img src="assets/images/captura_editar_producto.png" width="100%"> |
+
+---
 ## Tecnologías utilizadas
 
 | Capa | Tecnología |
@@ -36,6 +66,7 @@ Sistema web para gestionar consumos, pagos y deudas de estudiantes en kioscos es
 | Exportación | html-to-image |
 | Build frontend | Bun |
 
+---
 ## Inicio rápido
 
 ### Prerrequisitos
@@ -62,19 +93,27 @@ go run ./cmd/kiosco
 
 Acceder en: **http://localhost:3200**
 
+> [!IMPORTANT]
+> Debes ejecutar `templ generate` antes de iniciar la aplicación o las vistas no estarán disponibles.
+
 Para desarrollar estilos con recarga automática:
 
 ```bash
 bun run css:dev   # watch mode — observa cambios en assets/main.css
 ```
+> [!TIP]
+> Usa modo watch para recompilar automáticamente los estilos al guardar cambios.
 
-Variables de entorno opcionales (tienen valores por defecto):
+Variables de entorno opcionales
 
 | Variable | Por defecto |
 |----------|-------------|
 | `HOST` | `0.0.0.0` |
 | `PORT` | `3200` |
 
+> [!NOTE]
+> No es obligatorio usar variables de entorno porque vienen por defecto
+---
 ## CSS y JS personalizados
 
 Los assets de entrada están en `assets/`:
@@ -84,46 +123,7 @@ Los assets de entrada están en `assets/`:
 
 Al ejecutar `bun run start:static`, estos archivos se compilan y minimizan en `public/dist/`. Los archivos en `public/` se embeben en el binario al compilar con `go build`.
 
-## Compilación y despliegue
-
-### Compilar el binario
-
-```bash
-# Windows
-go build -ldflags="-s -w" -o kiosco.exe ./cmd/kiosco
-
-# Linux/macOS
-CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o kiosco ./cmd/kiosco
-```
-
-El binario resultante incluye todos los archivos estáticos y el schema SQL — no requiere archivos adicionales salvo la base de datos.
-
-### Despliegue en VPS
-
-```bash
-scp kiosco user@vps:/app/
-scp database/database.db user@vps:/app/database/
-```
-
-Luego en el servidor:
-
-```bash
-./kiosco
-```
-
-Si no existe `database/database.db`, se crea automáticamente con el schema y los datos iniciales (grados y productos por defecto).
-
-### Crear usuario administrador
-
-No existe ruta de registro. Los usuarios deben insertarse directamente en la base de datos con un hash Argon2id:
-
-```sql
-INSERT INTO usuarios (usuario, contrasenha, puede_editar)
-VALUES ('admin', '$argon2id$v=19$...hash...', 1);
-```
-
-Usar una herramienta externa para generar el hash Argon2id antes de insertar.
-
+---
 ## Rutas de la aplicación
 
 ### Rutas públicas
@@ -155,60 +155,23 @@ Usar una herramienta externa para generar el hash Argon2id antes de insertar.
 | `POST` | `/setup/producto/actualizar` | Actualizar producto |
 | `POST` | `/setup/producto/toggle` | Habilitar/deshabilitar producto |
 
+---
 ## Estructura del proyecto
 
 ```
 kiosco/
 ├── cmd/kiosco/main.go
 ├── internal/
-│   ├── auth/auth.go              # Llave efímera, HMAC token, Argon2id
-│   ├── config/
-│   │   ├── config.go             # HOST/PORT env vars (default 0.0.0.0:3200)
-│   │   ├── database.go           # Singleton SQLite + auto-init schema
-│   │   ├── schema.sql            # Schema embebido en el binario
-│   │   └── static.go             # Archivos estáticos embebidos (embed.FS)
-│   ├── controllers/
-│   │   ├── base.go
-│   │   ├── auth_controller.go
-│   │   ├── vistas_controller.go
-│   │   ├── consumos_controller.go
-│   │   ├── pagos_controller.go
-│   │   ├── setup_controller.go
-│   │   └── productos_controller.go
-│   ├── middleware/middleware.go   # RequiereAuth, Proteger
-│   ├── models/                   # Structs: Estudiante, Producto, Consumo, Pago, Usuario
-│   ├── repositories/             # Acceso a datos SQLite
-│   ├── router/router.go
-│   ├── services/services.go
-│   └── utils/
 ├── templates/
-│   ├── layouts/default.templ
-│   └── pages/
-│       ├── login.templ
-│       ├── inicio.templ
-│       ├── setup_estudiantes.templ
-│       ├── setup_productos.templ
-│       ├── editar_consumos.templ
-│       ├── editar_pagos.templ
-│       └── ver_consumo_semanal.templ
 ├── assets/
-│   ├── main.css                  # Estilos personalizados (entrada Tailwind)
-│   └── main.js                   # JS personalizado (entrada Bun)
 ├── public/                       # Estáticos generados (embebidos en el binario)
-│   ├── dist/
-│   │   ├── styles.css
-│   │   ├── alpine.min.js
-│   │   ├── htmx.min.js
-│   │   ├── canvas.min.js
-│   │   └── bundle.min.js
-│   ├── fonts/
-│   └── favicon.webp
 ├── database/database.db          # Creado automáticamente en el primer arranque
 ├── assets.go                     # embed.FS para public/
 ├── go.mod
 ├── go.sum
 └── package.json
 ```
+---
 
 ## Contacto
 
