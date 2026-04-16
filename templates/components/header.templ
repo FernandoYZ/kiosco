@@ -1,0 +1,102 @@
+package components
+import (
+	"fmt"
+	"kiosco/internal/models"
+	"kiosco/internal/utils"
+)
+templ Header(datos models.DatosVistaPrincipal) {
+	<!-- Contenedor Principal: Estilo Canvas de iPadOS -->
+	<div class="bg-transparent">
+		<div class="mx-auto">
+			<!-- El "Toolbar" Principal -->
+			<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 p-2">
+            
+			<!-- SECCIÓN IZQUIERDA: App Branding & Info (Fija) -->
+			<div class="flex-1 flex flex-col items-center lg:items-start text-center lg:text-left">
+				<h1 class="text-2xl font-extrabold tracking-tight text-gray-900 sm:text-3xl">
+					Kiosco <span class="text-blue-600">del Valle</span>
+				</h1>
+				<div class="flex items-center gap-2 mt-1 px-4 py-1 bg-gray-50 rounded-full border border-gray-200/70">
+					<p class="text-[13px] font-bold text-gray-500 uppercase tracking-tight">
+						{ fmt.Sprintf("%d %s", datos.FechaInicio.Day(), utils.NombreMes(datos.FechaInicio.Month())) } 
+                        <span class="text-gray-300 mx-1">—</span> 
+                        { fmt.Sprintf("%d %s, %d", datos.FechaFin.Day(), utils.NombreMes(datos.FechaFin.Month()), datos.FechaFin.Year()) }
+					</p>
+				</div>
+			</div>
+
+			<!-- SECCIÓN CENTRAL: Navegación de Sistema (Segmented Control) -->
+			<div class="flex flex-col items-center justify-center order-first lg:order-none">
+				<div class="inline-flex p-1 bg-gray-100/80 rounded-2xl border border-gray-200/40 shadow-inner backdrop-blur-sm gap-2">
+					<a
+						href={ templ.URL("/?fecha=" + utils.FormatearFechaCompleta(datos.FechaInicio.AddDate(0, 0, -7)) + "&grado=" + fmt.Sprintf("%d", datos.GradoSeleccionado)) }
+						class="p-2.5 text-gray-500 hover:bg-white hover:text-blue-600 rounded-xl transition-all duration-200 active:scale-90"
+						title="Semana anterior"
+					>
+						@IconChevronLeft("w-5 h-5")
+					</a>
+					
+					<a
+						href="/"
+						class="px-8 py-2.5 text-sm font-bold bg-blue-600 text-white shadow-lg rounded-xl hover:bg-blue-700 transition-all duration-200"
+					>
+						Semana actual
+					</a>
+					
+					<a
+						href={ templ.URL("/?fecha=" + utils.FormatearFechaCompleta(datos.FechaInicio.AddDate(0, 0, 7)) + "&grado=" + fmt.Sprintf("%d", datos.GradoSeleccionado)) }
+						class="p-2.5 text-gray-500 hover:bg-white hover:text-blue-600 rounded-xl transition-all duration-200 active:scale-90"
+						title="Semana siguiente"
+					>
+						@IconChevronRight("w-5 h-5")
+					</a>
+				</div>
+			</div>
+
+            <!-- SECCIÓN DERECHA: Acciones de Escritorio (Ocultas en Mobile/Tablet) -->
+            <div class="hidden lg:flex items-center justify-end gap-3 flex-1">
+                
+                <!-- App Toolbar Group -->
+                <nav class="flex items-center gap-1 p-1 bg-white rounded-[1.25rem] border border-gray-200/40">
+                    <a
+                        href="/setup"
+                        class="flex items-center gap-2 px-4 py-2.5 text-[11px] font-bold text-gray-500 hover:text-blue-600 hover:bg-white rounded-[0.9rem] transition-all"
+                    >
+                        @IconStudents("w-4 h-4")
+                        <span>ALUMNOS</span>
+                    </a>
+
+                    <a
+                        href="/setup/productos"
+                        class="flex items-center gap-2 px-4 py-2.5 text-[11px] font-bold text-gray-500 hover:text-blue-600 hover:bg-white rounded-[0.9rem] transition-all"
+                    >
+                        @IconProducts("w-4 h-4")
+                        <span>STOCK</span>
+                    </a>
+
+                    <a
+                        href="/registro"
+                        class="flex items-center gap-2 px-5 py-2.5 text-[11px] font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-[0.9rem] shadow-lg shadow-blue-100 transition-all active:scale-95"
+                    >
+                        @IconJournal("w-4 h-4")
+                        <span>REGISTRO</span>
+                    </a>
+                </nav>
+
+                <!-- Separador Estilo macOS -->
+                <div class="w-px h-10 bg-gray-200/80 mx-1"></div>
+
+                <!-- Botón de Salida (Acción de Sistema) -->
+                <a
+                    href="/logout"
+                    class="p-3 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-[1.25rem] transition-all duration-300 group"
+                    title="Cerrar Sesión"
+                >
+                    @IconLogout("w-6 h-6 transition-transform group-hover:rotate-12")
+                </a>
+            </div>
+
+        </div>
+    </div>
+</div>
+}

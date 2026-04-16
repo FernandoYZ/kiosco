@@ -5,7 +5,7 @@ templ Layout(titulo string) {
 		<html lang="es-PE">
 			<head>
 				<meta charset="UTF-8"/>
-				<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+				<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 				<title>{ titulo }</title>
 
 				<!-- Favicon, CSS y PWA -->
@@ -22,6 +22,7 @@ templ Layout(titulo string) {
 				<!-- Preload scripts críticos -->
 				<link rel="preload" href="/dist/htmx.min.js" as="script"/>
 				<link rel="preload" href="/dist/canvas.min.js" as="script"/>
+				<link rel="preload" href="/dist/collapse.min.js" as="script"/>
 				<link rel="preload" href="/dist/alpine.min.js" as="script"/>
 				<link rel="preload" href="/dist/bundle.min.js" as="script"/>
 
@@ -29,15 +30,17 @@ templ Layout(titulo string) {
 				<script src="/dist/htmx.min.js"></script>
 
 			</head>
-			<body>
+			<body class="bg-gray-50">
 				<!-- Contenido principal -->
-				<main>
+				<main class="">
 					{ children... }
 				</main>
+			
 
 				<!-- scripts defer -->
 				<script defer src="/dist/canvas.min.js"></script>
 				<script defer src="/dist/bundle.min.js"></script>
+				<script defer src="/dist/collapse.min.js"></script>
 				<script defer src="/dist/alpine.min.js"></script>
 
 			</body>
