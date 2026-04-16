@@ -13,7 +13,7 @@ import (
 // Si ya hay sesión válida redirige al inicio.
 func (m *Controlador) MostrarLogin(w http.ResponseWriter, r *http.Request) {
 	if cookie, err := r.Cookie(auth.CookieNombre); err == nil {
-		if _, ok := auth.VerificarToken(cookie.Value); ok {
+		if _, _, ok := auth.VerificarToken(cookie.Value); ok {
 			http.Redirect(w, r, "/", http.StatusSeeOther)
 			return
 		}
@@ -41,7 +41,7 @@ func (m *Controlador) ProcesarLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token := auth.FirmarToken(u.IdUsuario)
+	token := auth.FirmarToken(u.IdUsuario, u.PuedeEditar)
 	http.SetCookie(w, &http.Cookie{
 		Name:     auth.CookieNombre,
 		Value:    token,

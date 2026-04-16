@@ -27,13 +27,43 @@ func RequiereAuth(next http.Handler) http.Handler {
 			return
 		}
 
-		if _, ok := auth.VerificarToken(cookie.Value); !ok {
+		if _, _, ok := auth.VerificarToken(cookie.Value); !ok {
 			cookieInvalida(w, r)
 			return
 		}
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+// RequiereEdicion verifica que el usuario tenga puede_editar = 1.
+// Si no tiene permisos, redirige a /registro.
+func RequiereEdicion(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		cookie, err := r.Cookie(auth.CookieNombre)
+		if err != nil || cookie.Value == "" {
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			return
+		}
+
+		_, puedeEditar, ok := auth.VerificarToken(cookie.Value)
+		if !ok {
+			cookieInvalida(w, r)
+			return
+		}
+
+		if !puedeEditar {
+			http.Redirect(w, r, "/registro", http.StatusSeeOther)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+// ProtegerEdicion es un helper para adaptar HandlerFunc con RequiereEdicion.
+func ProtegerEdicion(h http.HandlerFunc) http.HandlerFunc {
+	return RequiereEdicion(h).ServeHTTP
 }
 
 // Proteger es un helper para adaptar HandlerFunc directamente.

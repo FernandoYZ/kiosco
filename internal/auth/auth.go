@@ -42,10 +42,14 @@ func LlaveEfimera() []byte {
 }
 
 // FirmarToken genera un token firmado con HMAC-SHA256.
-// Formato: <base64url(idUsuario:expiry)>.<base64url(hmac)>
-func FirmarToken(idUsuario int) string {
+// Formato: <base64url(idUsuario:puede_editar:expiry)>.<base64url(hmac)>
+func FirmarToken(idUsuario int, puedeEditar bool) string {
 	expiry := time.Now().Add(tiempoExpiry).Unix()
-	payload := fmt.Sprintf("%d:%d", idUsuario, expiry)
+	puede := 0
+	if puedeEditar {
+		puede = 1
+	}
+	payload := fmt.Sprintf("%d:%d:%d", idUsuario, puede, expiry)
 	b64 := base64.RawURLEncoding.EncodeToString([]byte(payload))
 
 	mac := hmac.New(sha256.New, LlaveEfimera())
@@ -56,11 +60,11 @@ func FirmarToken(idUsuario int) string {
 }
 
 // VerificarToken valida la firma y la expiración del token.
-// Devuelve el idUsuario y true si es válido.
-func VerificarToken(token string) (int, bool) {
+// Devuelve idUsuario, puedeEditar y true si es válido.
+func VerificarToken(token string) (int, bool, bool) {
 	partes := strings.SplitN(token, ".", 2)
 	if len(partes) != 2 {
-		return 0, false
+		return 0, false, false
 	}
 	b64, firmaRecibida := partes[0], partes[1]
 
@@ -69,30 +73,36 @@ func VerificarToken(token string) (int, bool) {
 	mac.Write([]byte(b64))
 	firmaEsperada := base64.RawURLEncoding.EncodeToString(mac.Sum(nil))
 	if !hmac.Equal([]byte(firmaRecibida), []byte(firmaEsperada)) {
-		return 0, false
+		return 0, false, false
 	}
 
 	// Decodificar payload
 	raw, err := base64.RawURLEncoding.DecodeString(b64)
 	if err != nil {
-		return 0, false
+		return 0, false, false
 	}
-	campos := strings.SplitN(string(raw), ":", 2)
-	if len(campos) != 2 {
-		return 0, false
+	campos := strings.SplitN(string(raw), ":", 3)
+	if len(campos) != 3 {
+		return 0, false, false
 	}
 
 	idUsuario, err := strconv.Atoi(campos[0])
 	if err != nil {
-		return 0, false
+		return 0, false, false
 	}
 
-	expiry, err := strconv.ParseInt(campos[1], 10, 64)
+	puede, err := strconv.Atoi(campos[1])
+	if err != nil {
+		return 0, false, false
+	}
+
+	expiry, err := strconv.ParseInt(campos[2], 10, 64)
 	if err != nil || time.Now().Unix() > expiry {
-		return 0, false
+		return 0, false, false
 	}
 
-	return idUsuario, true
+	puedeEditar := puede == 1
+	return idUsuario, puedeEditar, true
 }
 
 // VerificarPassword compara un password contra un hash Argon2id almacenado.

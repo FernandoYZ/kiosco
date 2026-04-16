@@ -41,6 +41,7 @@ type DatosEditarPagos struct {
 	FechaFin          time.Time
 	Pagos             []Pago
 	TotalPagos        float64
+	DeudaActual       float64
 	GradoSeleccionado int
 }
 
