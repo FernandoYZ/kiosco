@@ -158,3 +158,40 @@ func (r *Repositorio) ObtenerDeudasAnterioresBatch(idGrado int, fechaLimite time
 
 	return deudas, rows.Err()
 }
+
+// ObtenerEstudiantesActivosPorSector retorna estudiantes activos filtrados por sector
+// sector: "menor" (grados 1,2,3,4) o "mayor" (grados 5,6,7)
+func (r *Repositorio) ObtenerEstudiantesActivosPorSector(sector string) ([]models.Estudiante, error) {
+	var gradoList string
+	if sector == "menor" {
+		gradoList = "1,2,3,4"
+	} else {
+		gradoList = "5,6,7"
+	}
+
+	query := `
+		SELECT e.id_estudiante, e.nombres, e.apellidos, e.id_grado, e.esta_activo,
+		       g.anio_grado || ' ' || g.nivel_grado as nombre_grado
+		FROM estudiantes e
+		LEFT JOIN grados g ON e.id_grado = g.id_grado
+		WHERE e.esta_activo = 1 AND e.id_grado IN (` + gradoList + `)
+		ORDER BY e.apellidos, e.nombres
+	`
+
+	rows, err := r.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var estudiantes []models.Estudiante
+	for rows.Next() {
+		var e models.Estudiante
+		if err := rows.Scan(&e.IdEstudiante, &e.Nombres, &e.Apellidos, &e.IdGrado, &e.EstaActivo, &e.NombreGrado); err != nil {
+			return nil, err
+		}
+		estudiantes = append(estudiantes, e)
+	}
+
+	return estudiantes, rows.Err()
+}

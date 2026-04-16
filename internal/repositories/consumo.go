@@ -138,3 +138,30 @@ func (r *Repositorio) ObtenerConsumoExistente(idEstudiante, idProducto int, fech
 	}
 	return cantidad, err
 }
+
+// RegistrarConsumosBatch inserta múltiples consumos en una transacción atómica
+func (r *Repositorio) RegistrarConsumosBatch(consumos []models.Consumo) error {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	stmt, err := tx.Prepare(`
+		INSERT INTO consumos (id_estudiante, id_producto, cantidad, precio_unitario_venta, fecha_consumo)
+		VALUES (?, ?, ?, ?, ?)
+	`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	for _, c := range consumos {
+		fechaStr := c.FechaConsumo.Format("2006-01-02")
+		if _, err := stmt.Exec(c.IdEstudiante, c.IdProducto, c.Cantidad, c.PrecioUnitarioVenta, fechaStr); err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
+}

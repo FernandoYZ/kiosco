@@ -4,74 +4,34 @@ import (
 	"fmt"
 	"kiosco/internal/models"
 	"kiosco/internal/utils"
+	"kiosco/templates/components"
 	"kiosco/templates/layouts"
 )
 
 templ Inicio(datos models.DatosVistaPrincipal) {
 	@layouts.Layout("Kiosco Escolar") {
-		<div class="max-w-full mx-auto p-4 sm:p-6">
-			<!-- Cabecera -->
-			<header class="mb-6">
-				<div class="flex flex-col md:flex-row justify-between items-center gap-4">
-					<div>
-						<h1 class="text-2xl font-bold text-gray-900">Control de Consumo</h1>
-						<p class="text-gray-600">
-							Semana del { fmt.Sprintf("%d", datos.FechaInicio.Day()) } al { fmt.Sprintf("%d", datos.FechaFin.Day()) } de { utils.NombreMes(datos.FechaInicio.Month()) }
-						</p>
-					</div>
-					<div class="flex flex-col items-end gap-2">
-						<div class="flex items-center gap-2">
-							<a
-								href={ templ.URL("/?fecha=" + utils.FormatearFechaCompleta(datos.FechaInicio.AddDate(0, 0, -7)) + "&grado=" + fmt.Sprintf("%d", datos.GradoSeleccionado)) }
-								class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50"
-							>Anterior</a>
-							<a href="/" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700">Hoy</a>
-							<a
-								href={ templ.URL("/?fecha=" + utils.FormatearFechaCompleta(datos.FechaInicio.AddDate(0, 0, 7)) + "&grado=" + fmt.Sprintf("%d", datos.GradoSeleccionado)) }
-								class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50"
-							>Siguiente</a>
-						</div>
-						<div class="flex items-center gap-2">
-							<a
-								href="/setup"
-								class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-500 bg-white border border-gray-200 rounded-md hover:bg-gray-50 hover:text-indigo-700 transition-colors"
-							>
-								<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path>
-								</svg>
-								Estudiantes
-							</a>
-							<a
-								href="/setup/productos"
-								class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-500 bg-white border border-gray-200 rounded-md hover:bg-gray-50 hover:text-indigo-700 transition-colors"
-							>
-								<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
-								</svg>
-								Productos
-							</a>
-						</div>
-					</div>
-				</div>
-			</header>
+		<!-- Bottom Navigation -->
+		@components.BottomNav()
 
-			<!-- Pestañas de Grados -->
-			<div class="mb-4">
-				<div class="border-b border-gray-200">
-					<nav class="-mb-px flex space-x-4 overflow-x-auto" aria-label="Tabs">
+		<div class="max-w-full mx-auto p-4 sm:p-6 pt-0">
+			@components.Header(datos)
+
+			<!-- Pestañas de Grados - Sticky -->
+			<div class="sticky top-0 z-20 mb-4 bg-white">
+				<div class="rounded-t-xl border border-gray-200">
+					<nav class="-mb-px flex space-x-2 overflow-x-auto" aria-label="zTabs">
 						for _, grado := range datos.Grados {
 							<a
 								href={ templ.URL("/?grado=" + fmt.Sprintf("%d", grado.IdGrado) + "&fecha=" + utils.FormatearFechaCompleta(datos.FechaInicio)) }
 								if grado.IdGrado == datos.GradoSeleccionado {
-									class="whitespace-nowrap py-3 px-1 border-b-2 border-indigo-500 text-indigo-600 font-medium text-sm"
+									class="whitespace-nowrap py-3 px-4 border-b-2 border-indigo-500 text-indigo-600 font-medium text-sm"
 								} else {
-									class="whitespace-nowrap py-3 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium text-sm"
+									class="whitespace-nowrap py-3 px-4 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium text-sm"
 								}
 							>{ grado.Nombre }</a>
 						}
 					</nav>
 				</div>
-
 			</div>
 
 			<!-- Tabla de Consumos -->
@@ -104,9 +64,7 @@ templ Inicio(datos models.DatosVistaPrincipal) {
 											class="flex-shrink-0 p-1.5 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-md transition-colors"
 											title="Ver comprobante semanal"
 										>
-											<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-											</svg>
+											@components.IconViewReceipt("w-4 h-4")
 										</a>
 									</div>
 								</td>

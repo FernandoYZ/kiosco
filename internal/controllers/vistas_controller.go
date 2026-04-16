@@ -94,7 +94,7 @@ func (m *Controlador) VerConsumoSemanal(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	productos, err := m.servicio.Repo.ObtenerProductosActivos()
+	productos, err := m.servicio.Repo.ObtenerTodosProductos()
 	if err != nil {
 		http.Error(w, "Error al obtener productos", http.StatusInternalServerError)
 		return

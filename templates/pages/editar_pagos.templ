@@ -4,134 +4,196 @@ import (
 	"fmt"
 	"kiosco/internal/models"
 	"kiosco/internal/utils"
+	"kiosco/templates/components"
 	"kiosco/templates/layouts"
 )
 
 templ EditarPagos(datos models.DatosEditarPagos) {
 	@layouts.Layout("Editar Pagos - " + datos.NombreEstudiante) {
-		<div class="max-w-4xl mx-auto p-4 sm:p-6">
-			<div class="bg-white rounded-2xl shadow-lg border border-gray-200/80">
-				<!-- Encabezado -->
-				<div class="p-6 border-b border-gray-200">
-					<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-						<div>
-							<h1 class="text-2xl font-bold text-gray-900">{ datos.NombreEstudiante }</h1>
-							<p class="text-lg text-gray-600">
-								Pagos de la semana del { fmt.Sprintf("%d", datos.FechaInicio.Day()) } al { fmt.Sprintf("%d", datos.FechaFin.Day()) } de { utils.NombreMes(datos.FechaInicio.Month()) }
-							</p>
-						</div>
-						<a
-							href={ templ.URL("/?fecha=" + utils.FormatearFechaCompleta(datos.FechaInicio) + "&grado=" + fmt.Sprintf("%d", datos.GradoSeleccionado)) }
-							class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50"
-						>← Volver</a>
-					</div>
-				</div>
+		<div class="min-h-screen bg-[#F2F2F7] pb-20 text-[#000000]">
+			 <!-- Barra de Navegación Estilo iOS (Sticky) -->
+        <nav class="sticky top-0 z-20 bg-white/20 backdrop-blur-lg border-b border-gray-200/70 px-4 py-3">
+            <div class="max-w-2xl lg:max-w-6xl mx-auto flex items-center justify-between">
+                <a 
+                    href={ templ.URL("/?fecha=" + utils.FormatearFechaCompleta(datos.FechaInicio) + "&grado=" + fmt.Sprintf("%d", datos.GradoSeleccionado)) }
+                    class="flex items-center text-[#007AFF] transition-active active:opacity-50"
+                >
+                    @components.IconChevronLeft("w-6 h-6 -ml-2")
+                    <span class="text-[17px] font-medium">Atrás</span>
+                </a>
+                <h2 class="text-[17px] font-semibold truncate px-4 hidden sm:block">Gestión de Pagos</h2>
+                <div class="flex items-center gap-2">
+                     <span class="text-[13px] font-semibold text-[#8E8E93] uppercase tracking-wider">Saldo:</span>
+                     if datos.DeudaActual > 0 {
+                        <span class="text-[17px] font-bold text-[#FF3B30] tabular-nums">S/ { utils.FormatearMoneda(datos.DeudaActual) }</span>
+                     } else {
+                        <span class="text-[17px] font-bold text-[#34C759] tabular-nums">S/ { utils.FormatearMoneda(datos.DeudaActual) }</span>
+                     }
+                </div>
+            </div>
+        </nav>
 
-				<!-- Formulario para agregar nuevo pago -->
-				<div class="p-6 bg-green-50 border-b border-green-100">
-					<h2 class="text-lg font-semibold text-gray-900 mb-4">Registrar Nuevo Pago</h2>
-					<form method="POST" action="/registrar-pago" class="flex flex-col sm:flex-row gap-4">
-						<input type="hidden" name="id_estudiante" value={ fmt.Sprintf("%d", datos.IdEstudiante) }/>
-						<input type="hidden" name="fecha" value={ utils.FormatearFechaCompleta(datos.FechaInicio) }/>
-						<input type="hidden" name="grado" value={ fmt.Sprintf("%d", datos.GradoSeleccionado) }/>
-						<input type="hidden" name="redirect" value="editar-pagos"/>
-						<div class="flex-1">
-							<label for="monto" class="block text-sm font-medium text-gray-700 mb-1">Monto</label>
-							<div class="relative">
-								<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-									<span class="text-gray-500 sm:text-sm">S/</span>
-								</div>
-								<input
-									type="number"
-									name="monto"
-									id="monto"
-									class="block w-full pl-9 pr-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-									placeholder="0.00"
-									step="0.01"
-									min="0.01"
-									required
-									autofocus
-								/>
-							</div>
-						</div>
-						<div class="flex-1">
-							<label for="fecha_pago" class="block text-sm font-medium text-gray-700 mb-1">Fecha del Pago</label>
-							<input
-								type="date"
-								name="fecha_pago"
-								id="fecha_pago"
-								value={ utils.FormatearFechaCompleta(datos.FechaInicio) }
-								class="block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-								required
-							/>
-						</div>
-						<div class="flex items-end">
-							<button type="submit" class="w-full sm:w-auto px-6 py-2 bg-green-600 text-white font-medium rounded-md hover:bg-green-700">
-								Agregar Pago
-							</button>
-						</div>
-					</form>
-				</div>
+        <div class="max-w-2xl lg:max-w-6xl mx-auto px-4 pt-6 lg:pt-10">
+            
+            <!-- Cabecera Principal (Large Title) -->
+            <header class="mb-8 lg:mb-12">
+                <h1 class="text-[34px] font-bold tracking-tight leading-tight text-gray-900">{ datos.NombreEstudiante }</h1>
+                <p class="text-[17px] text-[#8E8E93] font-medium mt-1">
+                    Semana del { fmt.Sprintf("%d", datos.FechaInicio.Day()) } al { fmt.Sprintf("%d", datos.FechaFin.Day()) } de { utils.NombreMes(datos.FechaInicio.Month()) }
+                </p>
+            </header>
 
-				<!-- Lista de pagos existentes -->
-				<div class="p-6">
-					<div class="flex justify-between items-center mb-4">
-						<h2 class="text-lg font-semibold text-gray-900">Pagos Registrados</h2>
-						if len(datos.Pagos) > 0 {
-							<div class="text-sm">
-								<span class="text-gray-600">Total: </span>
-								<span class="font-bold text-green-700 text-lg">S/ { utils.FormatearMoneda(datos.TotalPagos) }</span>
-							</div>
-						}
-					</div>
+            <!-- Grid de Dos Columnas -->
+            <div class="lg:grid lg:grid-cols-12 lg:gap-10 lg:items-start">
+                
+                <!-- COLUMNA IZQUIERDA: Formulario de Registro (Sticky en Desktop) -->
+                <aside class="lg:col-span-5 mb-10 lg:mb-0 lg:sticky lg:top-24">
+                    <h3 class="px-4 mb-3 text-[13px] font-medium text-[#8E8E93] uppercase tracking-wide">REGISTRAR NUEVO PAGO</h3>
+                    <div class="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-200">
+                        <form method="POST" action="/registrar-pago" class="divide-y divide-gray-100">
+                            <input type="hidden" name="id_estudiante" value={ fmt.Sprintf("%d", datos.IdEstudiante) }/>
+                            <input type="hidden" name="fecha" value={ utils.FormatearFechaCompleta(datos.FechaInicio) }/>
+                            <input type="hidden" name="grado" value={ fmt.Sprintf("%d", datos.GradoSeleccionado) }/>
+                            <input type="hidden" name="redirect" value="editar-pagos"/>
 
-					if len(datos.Pagos) > 0 {
-						<div class="space-y-3">
-							for _, pago := range datos.Pagos {
-								<div id={ fmt.Sprintf("pago-%d", pago.IdPago) } class="flex items-center justify-between p-4 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors">
-									<div class="flex items-center gap-4">
-										<div class="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
-											<svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-												<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-											</svg>
-										</div>
-										<div>
-											<p class="text-lg font-bold text-gray-900">S/ { utils.FormatearMoneda(pago.Monto) }</p>
-											<p class="text-sm text-gray-600">{ utils.FormatearFechaLarga(pago.FechaPago) }</p>
-										</div>
-									</div>
-									<button
-										type="button"
-										hx-post="/eliminar-pago"
-										hx-target={ "#pago-" + fmt.Sprintf("%d", pago.IdPago) }
-										hx-swap="outerHTML"
-										hx-confirm={ "¿Eliminar el pago de S/ " + utils.FormatearMoneda(pago.Monto) + "?" }
-										hx-vals={ fmt.Sprintf(`{"id_pago":"%d","id_estudiante":"%d","fecha":"%s","grado":"%d"}`, pago.IdPago, datos.IdEstudiante, utils.FormatearFechaCompleta(datos.FechaInicio), datos.GradoSeleccionado) }
-										class="px-4 py-2 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-md hover:bg-red-100"
-									>
-										Eliminar
-									</button>
-								</div>
-							}
-						</div>
-					} else {
-						<div class="text-center py-12">
-							<svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
-							</svg>
-							<h3 class="mt-2 text-sm font-medium text-gray-900">No hay pagos registrados</h3>
-							<p class="mt-1 text-sm text-gray-500">Comienza agregando un nuevo pago arriba.</p>
-						</div>
-					}
-				</div>
+                            <!-- Fila: Monto -->
+                            <div class="flex items-center px-5 py-4 bg-white">
+                                <label for="monto" class="w-28 text-[17px] text-gray-600 font-medium">Monto</label>
+                                <div class="flex-1 flex items-center">
+                                    <span class="text-gray-400 mr-1 text-[19px] font-semibold">S/</span>
+                                    <input 
+                                        type="number" 
+                                        name="monto" 
+                                        id="monto"
+                                        step="0.01"
+                                        min="0.01"
+                                        placeholder="0.00"
+                                        required
+                                        autofocus
+                                        class="w-full border-none focus:ring-0 text-[20px] p-0 text-[#007AFF] placeholder-gray-300 font-bold tabular-nums"
+                                    />
+                                </div>
+                            </div>
 
-				<div class="p-6 pt-0">
-					<a
-						href={ templ.URL("/?fecha=" + utils.FormatearFechaCompleta(datos.FechaInicio) + "&grado=" + fmt.Sprintf("%d", datos.GradoSeleccionado)) }
-						class="w-full inline-flex justify-center px-6 py-3 border border-gray-300 shadow-sm text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-					>Volver a la Tabla Principal</a>
-				</div>
-			</div>
-		</div>
-	}
+                            <!-- Fila: Fecha -->
+                            <div class="flex items-center px-5 py-4 bg-white">
+                                <label for="fecha_pago" class="w-28 text-[17px] text-gray-600 font-medium">Fecha</label>
+                                <input 
+                                    type="date" 
+                                    name="fecha_pago" 
+                                    id="fecha_pago"
+                                    value={ utils.FormatearFechaCompleta(datos.FechaInicio) }
+                                    required
+                                    class="flex-1 border-none focus:ring-0 text-[17px] p-0 text-[#007AFF] bg-transparent font-semibold"
+                                />
+                            </div>
+
+                            <!-- Botón Acción -->
+                            <div class="p-4 bg-gray-50/50">
+                                <button type="submit" class="w-full py-4 bg-[#007AFF] hover:bg-[#0062cc] text-lg active:scale-[0.98] text-white font-bold rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-200">
+                                    Registrar Abono
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <!-- Card informativo de Deuda (Solo Desktop) - Actualizable por HTMX -->
+                    <div id="saldo-info" class="mt-6 p-5 bg-white rounded-3xl border border-gray-200 hidden lg:block">
+                         <div class="flex items-center justify-between">
+                             <span class="text-[15px] font-medium text-gray-500">Saldo actual</span>
+                             if datos.DeudaActual > 0 {
+                                 <span class="text-[20px] font-black text-[#FF3B30] tabular-nums">S/ { utils.FormatearMoneda(datos.DeudaActual) }</span>
+                             } else {
+                                 <span class="text-[20px] font-black text-[#34C759] tabular-nums">S/ { utils.FormatearMoneda(datos.DeudaActual) }</span>
+                             }
+                         </div>
+                    </div>
+                </aside>
+
+                <!-- COLUMNA DERECHA: Histórico de Pagos -->
+                <main class="lg:col-span-7">
+                    <div class="flex items-end justify-between px-4 mb-3">
+                        <h3 class="text-[13px] font-medium text-[#8E8E93] uppercase tracking-wide">HISTÓRICO DE PAGOS</h3>
+                        if len(datos.Pagos) > 0 {
+                            <div class="text-right">
+                                <span class="text-[11px] font-bold text-gray-400 block uppercase">Total Abonado</span>
+                                <span class="text-[17px] font-bold text-[#34C759]">S/ { utils.FormatearMoneda(datos.TotalPagos) }</span>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-200">
+                        if len(datos.Pagos) > 0 {
+                            <div class="divide-y divide-gray-100">
+                                for _, pago := range datos.Pagos {
+                                    <div id={ fmt.Sprintf("pago-%d", pago.IdPago) } class="group flex items-center justify-between p-5 hover:bg-gray-50 transition-colors">
+                                        <div class="flex items-center gap-4">
+                                            <div class="w-12 h-12 rounded-full bg-[#E8F9EE] flex items-center justify-center flex-shrink-0">
+                                                <svg class="w-6 h-6 text-[#34C759]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <p class="text-[19px] font-bold text-gray-900 tabular-nums leading-tight">S/ { utils.FormatearMoneda(pago.Monto) }</p>
+                                                <p class="text-[14px] text-[#8E8E93] mt-0.5">{ utils.FormatearFechaLarga(pago.FechaPago) }</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <button
+                                            type="button"
+                                            hx-post="/eliminar-pago"
+                                            hx-target={ "#pago-" + fmt.Sprintf("%d", pago.IdPago) }
+                                            hx-swap="outerHTML"
+                                            hx-confirm={ "¿Estás seguro de eliminar este pago?" }
+                                            hx-vals={ fmt.Sprintf(`{"id_pago":"%d","id_estudiante":"%d","fecha":"%s","grado":"%d"}`, pago.IdPago, datos.IdEstudiante, utils.FormatearFechaCompleta(datos.FechaInicio), datos.GradoSeleccionado) }
+                                            class="text-[#FF3B30] text-[15px] font-semibold hover:text-red-700 transition-colors px-3 py-2 -mr-2"
+                                        >
+                                            Eliminar
+                                        </button>
+                                    </div>
+                                }
+                            </div>
+                        } else {
+                            <div class="text-center py-20 px-6">
+                                <div class="bg-[#F2F2F7] w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <svg class="w-10 h-10 text-[#AEAEB2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </div>
+                                <h3 class="text-[19px] font-bold text-gray-900">Historial vacío</h3>
+                                <p class="text-[15px] text-[#8E8E93] mt-2 max-w-[240px] mx-auto">Aún no se han registrado pagos para esta semana.</p>
+                            </div>
+                        }
+                    </div>
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <style>      
+        input:focus {
+            outline: none;
+        }
+
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            color: #007AFF;
+            cursor: pointer;
+            filter: invert(34%) sepia(93%) saturate(3754%) hue-rotate(204deg) brightness(101%) contrast(106%);
+        }
+
+        /* Custom scrollbar para la lista de pagos en desktop */
+        @media (min-width: 1024px) {
+            .custom-scrollbar::-webkit-scrollbar {
+                width: 6px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-track {
+                background: transparent;
+            }
+            .custom-scrollbar::-webkit-scrollbar-thumb {
+                background: #D1D1D6;
+                border-radius: 10px;
+            }
+        }
+    </style>
+}
 }

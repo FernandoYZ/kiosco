@@ -47,7 +47,8 @@ self.addEventListener('fetch', (e) => {
     e.respondWith(
       caches.match(e.request).then((cached) => {
         const network = fetch(e.request).then((res) => {
-          if (res.ok) {
+          // Solo cachear si el scheme es http/https (no chrome-extension, etc)
+          if (res.ok && (url.protocol === 'http:' || url.protocol === 'https:')) {
             const clone = res.clone();
             caches.open(CACHE).then((cache) => cache.put(e.request, clone));
           }

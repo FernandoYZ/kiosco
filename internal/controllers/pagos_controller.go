@@ -122,6 +122,27 @@ func (m *Controlador) EditarPagos(w http.ResponseWriter, r *http.Request) {
 		totalPagos += p.Monto
 	}
 
+	// Obtener consumos de la semana
+	consumos, err := m.servicio.Repo.ObtenerConsumosSemana(fechaInicio, fechaFin)
+	subTotal := 0.0
+	if err == nil {
+		for _, c := range consumos {
+			if c.IdEstudiante == idEstudiante {
+				subTotal += c.TotalLinea
+			}
+		}
+	}
+
+	// Obtener deuda anterior (acumulada de semanas anteriores)
+	deudaAnterior, err := m.servicio.Repo.ObtenerDeudaAnterior(idEstudiante, fechaInicio)
+	if err != nil {
+		deudaAnterior = 0.0
+	}
+
+	// Deuda actual = (Consumos semana + Deuda anterior) - Pagos realizados
+	// Nota: Puede ser negativo si hay saldo a favor (cliente pagó más de lo debido)
+	deudaActual := (subTotal + deudaAnterior) - totalPagos
+
 	datos := models.DatosEditarPagos{
 		IdEstudiante:      idEstudiante,
 		NombreEstudiante:  nombreEstudiante,
@@ -129,6 +150,7 @@ func (m *Controlador) EditarPagos(w http.ResponseWriter, r *http.Request) {
 		FechaFin:          fechaFin,
 		Pagos:             pagos,
 		TotalPagos:        totalPagos,
+		DeudaActual:       deudaActual,
 		GradoSeleccionado: idGrado,
 	}
 
@@ -155,21 +177,61 @@ func (m *Controlador) EliminarPago(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	idEstudiante := r.FormValue("id_estudiante")
+	fechaStr := r.FormValue("fecha")
+	grado := r.FormValue("grado")
+
 	if err := m.servicio.Repo.EliminarPago(idPago); err != nil {
 		log.Printf("Error al eliminar pago: %v", err)
 		http.Error(w, "Error al eliminar pago", http.StatusInternalServerError)
 		return
 	}
 
-	// HTMX: retornar respuesta vacía para que el elemento desaparezca del DOM
+	// HTMX: retornar respuesta vacía para eliminar el pago + actualizar saldo con OOB (Out of Band)
 	if r.Header.Get("HX-Request") == "true" {
-		w.WriteHeader(http.StatusOK)
+		// Re-calcular datos actualizados después de eliminar el pago
+		idEstudianteInt, _ := strconv.Atoi(idEstudiante)
+		fecha, _ := time.Parse("2006-01-02", fechaStr)
+		fechaInicio, fechaFin := utils.CalcularSemanaDesdeFecha(fecha)
+
+		pagos, _ := m.servicio.Repo.ObtenerPagosSemanaDetalle(idEstudianteInt, fechaInicio, fechaFin)
+		totalPagos := 0.0
+		for _, p := range pagos {
+			totalPagos += p.Monto
+		}
+
+		consumos, _ := m.servicio.Repo.ObtenerConsumosSemana(fechaInicio, fechaFin)
+		subTotal := 0.0
+		for _, c := range consumos {
+			if c.IdEstudiante == idEstudianteInt {
+				subTotal += c.TotalLinea
+			}
+		}
+
+		deudaAnterior, _ := m.servicio.Repo.ObtenerDeudaAnterior(idEstudianteInt, fechaInicio)
+		deudaActual := (subTotal + deudaAnterior) - totalPagos
+
+		// Retornar respuesta vacía para eliminar el pago + OOB para actualizar saldo
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+		// El elemento vacío elimina el pago del DOM
+		fmt.Fprint(w, "")
+
+		// Out-of-Band Swap para actualizar el saldo sin cambiar el target
+		fmt.Fprintf(w, `<div id="saldo-info" hx-swap-oob="outerHTML" class="mt-6 p-5 bg-white rounded-3xl border border-gray-200 hidden lg:block">
+			<div class="flex items-center justify-between">
+				<span class="text-[15px] font-medium text-gray-500">Saldo actual</span>`)
+
+		if deudaActual > 0 {
+			fmt.Fprintf(w, `<span class="text-[20px] font-black text-[#FF3B30] tabular-nums">S/ %s</span>`, utils.FormatearMoneda(deudaActual))
+		} else {
+			fmt.Fprintf(w, `<span class="text-[20px] font-black text-[#34C759] tabular-nums">S/ %s</span>`, utils.FormatearMoneda(deudaActual))
+		}
+
+		fmt.Fprint(w, `</div>
+		</div>`)
 		return
 	}
-
-	idEstudiante := r.FormValue("id_estudiante")
-	fechaStr := r.FormValue("fecha")
-	grado := r.FormValue("grado")
 
 	urlRedireccion := fmt.Sprintf("/editar-pagos?id_estudiante=%s&fecha=%s", idEstudiante, fechaStr)
 	if grado != "" {

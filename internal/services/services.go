@@ -27,8 +27,8 @@ func (s *Servicio) ObtenerDatosVistaPrincipal(fechaInicio, fechaFin time.Time, i
 		return nil, fmt.Errorf("error al obtener estudiantes: %v", err)
 	}
 
-	// Obtener productos activos
-	productos, err := s.Repo.ObtenerProductosActivos()
+	// Obtener todos los productos (incluyendo desactivados) para mostrar consumos históricos
+	productos, err := s.Repo.ObtenerTodosProductos()
 	if err != nil {
 		return nil, fmt.Errorf("error al obtener productos: %v", err)
 	}

@@ -3,67 +3,89 @@ package pages
 import "kiosco/templates/layouts"
 
 templ Login(errorMsg string) {
-	@layouts.Layout("Iniciar Sesión") {
-		<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 via-indigo-50 to-slate-100 px-4">
-			<div class="w-full max-w-sm">
-				<!-- Logo / Título -->
-				<div class="text-center mb-10">
-					<div class="mx-auto w-20 h-20 bg-indigo-600 rounded-[28px] flex items-center justify-center mb-5 shadow-2xl shadow-indigo-200">
-						<svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
-						</svg>
-					</div>
-					<h1 class="text-[28px] font-bold text-gray-900 tracking-tight">Kiosco Escolar</h1>
-					<p class="mt-1.5 text-sm text-gray-400">Inicia sesión para continuar</p>
-				</div>
+    @layouts.Layout("Iniciar Sesión") {
+        <div class="min-h-screen flex flex-col bg-[#F2F2F7] px-6 pt-20 sm:pt-0 sm:items-center sm:justify-center">
+            
+            <div class="w-full max-w-[360px] mx-auto">
+                <div class="flex flex-col items-center mb-10">
+                    <div class="w-20 h-20 bg-[#007AFF] rounded-[22%] flex items-center justify-center mb-6 shadow-xl shadow-blue-200">
+                        <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                        </svg>
+                    </div>
+                    <h1 class="text-[34px] font-extrabold text-gray-900 tracking-tight leading-tight">Kiosco <span class="text-blue-600">del Valle</span></h1>
+                    <p class="text-[17px] text-[#8E8E93] font-medium mt-1">Identifícate para continuar</p>
+                </div>
 
-				<!-- Card -->
-				<div class="bg-white/70 backdrop-blur-2xl rounded-3xl shadow-xl shadow-slate-200/60 border border-white/80 p-8">
-					if errorMsg != "" {
-						<div class="mb-5 px-4 py-3 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-2.5">
-							<svg class="w-4 h-4 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-							</svg>
-							<p class="text-sm text-red-600">{ errorMsg }</p>
-						</div>
-					}
-					<form method="POST" action="/login" class="space-y-4">
-						<div>
-							<label for="usuario" class="block text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-2">Usuario</label>
-							<input
-								type="text"
-								id="usuario"
-								name="usuario"
-								required
-								autofocus
-								autocomplete="username"
-								class="block w-full px-4 py-3.5 bg-slate-50 border-0 rounded-2xl text-gray-900 text-sm placeholder-gray-300 focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none"
-								placeholder="admin"
-							/>
-						</div>
-						<div>
-							<label for="password" class="block text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-2">Contraseña</label>
-							<input
-								type="password"
-								id="password"
-								name="password"
-								required
-								autocomplete="current-password"
-								class="block w-full px-4 py-3.5 bg-slate-50 border-0 rounded-2xl text-gray-900 text-sm placeholder-gray-300 focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none"
-								placeholder="••••••••"
-							/>
-						</div>
-						<div class="pt-2">
-							<button
-								type="submit"
-								class="w-full py-4 px-4 bg-indigo-600 text-white font-semibold rounded-2xl hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 text-sm tracking-wide"
-							>
-								Iniciar Sesión
-							</button>
-						</div>
-					</form>
-				</div>
-			</div>
-		</div>
-	}
+                if errorMsg != "" {
+                    <div class="mb-6 p-4 bg-white/50 border border-red-200 rounded-2xl flex items-center gap-3 animate-in fade-in zoom-in duration-300">
+                        <div class="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span class="text-white font-bold text-xs">!</span>
+                        </div>
+                        <p class="text-[15px] text-red-600 font-semibold">{ errorMsg }</p>
+                    </div>
+                }
+
+                <form method="POST" action="/login" class="space-y-6">
+                    <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm divide-y divide-gray-100">
+                        <div class="flex items-center px-4 py-4">
+                            <label for="usuario" class="w-24 text-[17px] text-gray-500 font-medium">Usuario</label>
+                            <input
+                                type="text"
+                                id="usuario"
+                                name="usuario"
+                                required
+                                autofocus
+                                autocomplete="username"
+                                placeholder="Requerido"
+                                class="flex-1 bg-transparent border-none focus:ring-0 text-[17px] p-0 text-gray-900 placeholder-gray-300"
+                            />
+                        </div>
+                        
+                        <div class="flex items-center px-4 py-4">
+                            <label for="password" class="w-24 text-[17px] text-gray-500 font-medium">Clave</label>
+                            <input
+                                type="password"
+                                id="password"
+                                name="password"
+                                required
+                                autocomplete="current-password"
+                                placeholder="••••••••"
+                                class="flex-1 bg-transparent border-none focus:ring-0 text-[17px] p-0 text-[#007AFF] font-bold placeholder-gray-300"
+                            />
+                        </div>
+                    </div>
+
+                    <div class="pt-2">
+                        <button
+                            type="submit"
+                            class="w-full py-4 bg-[#007AFF] hover:bg-blue-600 active:scale-[0.98] text-white font-bold rounded-2xl text-[17px] shadow-lg shadow-blue-100 transition-all duration-200"
+                        >
+                            Iniciar Sesión
+                        </button>
+                    </div>
+                </form>
+
+                <div class="mt-10 text-center">
+                    <p class="text-[13px] text-[#8E8E93] font-medium leading-relaxed">
+                        Sistema de Gestión Interna<br/>
+                        Kiosco Pro v2.0
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <style>
+            /* Eliminar highlight al tocar */
+            * { -webkit-tap-highlight-color: transparent; }
+            
+            /* Ajuste para inputs en iOS */
+            input:focus { outline: none; }
+            
+            /* Curva de icono oficial de Apple (Squircle) */
+            .rounded-apple {
+                border-radius: 22%;
+            }
+        </style>
+    }
 }

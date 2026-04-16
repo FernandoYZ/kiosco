@@ -4,37 +4,60 @@ import (
 	"fmt"
 	"kiosco/internal/models"
 	"kiosco/internal/utils"
+	"kiosco/templates/components"
 	"kiosco/templates/layouts"
 )
 
-// FilaProducto es el fragmento HTMX retornado al agregar/editar/toggle un producto
+// FilaProducto: Estilo de celda de lista de iOS con edición expansiva
 templ FilaProducto(prod models.Producto) {
 	<div
 		id={ "prod-" + fmt.Sprintf("%d", prod.IdProducto) }
 		x-data="{ editando: false }"
-		class={
-			"border rounded-lg overflow-hidden",
-			templ.KV("border-gray-200 bg-white", prod.EstaActivo),
-			templ.KV("border-gray-100 bg-gray-50 opacity-55", !prod.EstaActivo),
-		}
+		class="bg-white border-b border-gray-200/70 last:border-b-0"
 	>
-		<!-- Vista normal -->
-		<div x-show="!editando" class="flex items-center justify-between p-3 gap-3">
-			<div class="min-w-0 flex-1 flex items-center gap-4">
-				<div>
-					<p class={ "font-medium text-sm", templ.KV("text-gray-900", prod.EstaActivo), templ.KV("text-gray-400 line-through", !prod.EstaActivo) }>
+		<!-- Vista de Fila Estándar -->
+		<div x-show="!editando" class="group flex items-center justify-between p-4 hover:bg-gray-50 transition-colors">
+			<div class="flex items-center gap-4 min-w-0">
+				<!-- Icono de Producto -->
+				<div
+					class={
+						"w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-opacity",
+						templ.KV("bg-indigo-50 text-indigo-600", prod.EstaActivo),
+						templ.KV("bg-gray-100 text-gray-400 opacity-50", !prod.EstaActivo),
+					}
+				>
+					@components.IconProducts("w-5 h-5")
+				</div>
+				<div class="truncate">
+					<p
+						class={
+							"text-[17px] font-semibold truncate leading-tight",
+							templ.KV("text-gray-900", prod.EstaActivo),
+							templ.KV("text-gray-400 line-through", !prod.EstaActivo),
+						}
+					>
 						{ prod.Nombre }
 					</p>
+					<p
+						class={
+							"text-[15px] font-medium tabular-nums",
+							templ.KV("text-[#007AFF]", prod.EstaActivo),
+							templ.KV("text-gray-400", !prod.EstaActivo),
+						}
+					>
+						S/ { utils.FormatearMoneda(prod.PrecioUnitario) }
+					</p>
 				</div>
-				<span class={ "text-sm font-bold", templ.KV("text-indigo-700", prod.EstaActivo), templ.KV("text-gray-400", !prod.EstaActivo) }>
-					S/ { utils.FormatearMoneda(prod.PrecioUnitario) }
-				</span>
 			</div>
-			<div class="flex items-center gap-1.5 shrink-0">
+			<!-- Acciones Estilo iOS -->
+			<div class="flex items-center gap-2">
 				<button
+					type="button"
 					@click="editando = true"
-					class="px-2.5 py-1 text-xs font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-md hover:bg-indigo-100 transition-colors"
-				>Editar</button>
+					class="text-[#007AFF] text-[15px] font-medium px-3 py-1 hover:bg-blue-50 rounded-lg transition-colors"
+				>
+					Editar
+				</button>
 				if prod.EstaActivo {
 					<button
 						hx-post="/setup/producto/toggle"
@@ -42,178 +65,175 @@ templ FilaProducto(prod models.Producto) {
 						hx-swap="outerHTML"
 						hx-vals={ fmt.Sprintf(`{"id_producto":"%d","esta_activo":"0"}`, prod.IdProducto) }
 						hx-confirm={ "¿Deshabilitar " + prod.Nombre + "?" }
-						class="px-2.5 py-1 text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 transition-colors"
-					>Deshabilitar</button>
+						class="text-[#FF3B30] text-[15px] font-medium px-3 py-1 hover:bg-red-50 rounded-lg transition-colors"
+					>
+						Desactivar
+					</button>
 				} else {
 					<button
 						hx-post="/setup/producto/toggle"
 						hx-target={ "#prod-" + fmt.Sprintf("%d", prod.IdProducto) }
 						hx-swap="outerHTML"
 						hx-vals={ fmt.Sprintf(`{"id_producto":"%d","esta_activo":"1"}`, prod.IdProducto) }
-						class="px-2.5 py-1 text-xs font-medium text-green-700 bg-green-50 border border-green-200 rounded-md hover:bg-green-100 transition-colors"
-					>Habilitar</button>
+						class="text-[#34C759] text-[15px] font-medium px-3 py-1 hover:bg-green-50 rounded-lg transition-colors"
+					>
+						Activar
+					</button>
 				}
 			</div>
 		</div>
-		<!-- Formulario de edición inline -->
-		<form
-			x-show="editando"
-			x-cloak
-			hx-post="/setup/producto/actualizar"
-			hx-target={ "#prod-" + fmt.Sprintf("%d", prod.IdProducto) }
-			hx-swap="outerHTML"
-			class="p-3 space-y-3 bg-indigo-50/60 border-t border-indigo-100"
-		>
-			<input type="hidden" name="id_producto" value={ fmt.Sprintf("%d", prod.IdProducto) }/>
-			<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-				<div>
-					<label class="block text-xs font-medium text-gray-600 mb-1">Nombre</label>
-					<input
-						type="text"
-						name="nombre"
-						value={ prod.Nombre }
-						required
-						class="block w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-					/>
+		<!-- Formulario de Edición (Inline) -->
+		<div x-show="editando" x-cloak class="bg-[#F9F9F9] p-5 space-y-4 border-l-4 border-[#007AFF]">
+			<form
+				hx-post="/setup/producto/actualizar"
+				hx-target={ "#prod-" + fmt.Sprintf("%d", prod.IdProducto) }
+				hx-swap="outerHTML"
+				class="space-y-4"
+			>
+				<input type="hidden" name="id_producto" value={ fmt.Sprintf("%d", prod.IdProducto) }/>
+				<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+					<div class="bg-white rounded-xl p-3 border border-gray-200">
+						<label class="block text-[12px] font-bold text-gray-400 uppercase mb-1">Nombre del Producto</label>
+						<input
+							type="text"
+							name="nombre"
+							value={ prod.Nombre }
+							required
+							class="w-full border-none p-0 focus:ring-0 text-[17px] text-gray-900 font-medium"
+						/>
+					</div>
+					<div class="bg-white rounded-xl p-3 border border-gray-200">
+						<label class="block text-[12px] font-bold text-gray-400 uppercase mb-1">Precio (S/)</label>
+						<input
+							type="number"
+							name="precio_unitario"
+							value={ utils.FormatearMoneda(prod.PrecioUnitario) }
+							step="0.01"
+							min="0.01"
+							required
+							class="w-full border-none p-0 focus:ring-0 text-[17px] text-[#007AFF] font-bold"
+						/>
+					</div>
 				</div>
-				<div>
-					<label class="block text-xs font-medium text-gray-600 mb-1">Precio (S/)</label>
-					<input
-						type="number"
-						name="precio_unitario"
-						value={ utils.FormatearMoneda(prod.PrecioUnitario) }
-						step="0.01"
-						min="0.01"
-						required
-						class="block w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-					/>
+				<div class="flex gap-3">
+					<button type="submit" class="flex-1 py-3 bg-[#007AFF] text-white font-bold rounded-xl active:scale-[0.98] transition-all shadow-sm">
+						Guardar Cambios
+					</button>
+					<button type="button" @click="editando = false" class="px-6 py-3 bg-white border border-gray-200 text-gray-600 font-semibold rounded-xl active:scale-[0.98] transition-all">
+						Cancelar
+					</button>
 				</div>
-			</div>
-			<div class="flex gap-2">
-				<button
-					type="submit"
-					class="px-4 py-1.5 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
-				>Guardar</button>
-				<button
-					type="button"
-					@click="editando = false"
-					class="px-4 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-				>Cancelar</button>
-			</div>
-		</form>
+			</form>
+		</div>
 	</div>
 }
 
 templ SetupProductos(productos []models.Producto) {
 	@layouts.Layout("Gestionar Productos") {
-		<div class="max-w-xl mx-auto p-4 sm:p-8">
-
-			<!-- Encabezado -->
-			<div class="text-center mb-8">
-				<div class="mx-auto w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mb-4">
-					<svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
-					</svg>
+		<div class="bg-[#F2F2F7] text-[#000000]">
+			<!-- Barra de Navegación Estilo iOS -->
+			<nav class="sticky top-0 z-20 bg-white/20 backdrop-blur-lg border-b border-gray-200/70 px-4 py-3">
+				<div class="max-w-2xl lg:max-w-6xl mx-auto flex items-center justify-between">
+					<a href="/" class="flex items-center text-[#007AFF] transition-active active:opacity-50">
+						@components.IconChevronLeft("w-6 h-6 -ml-2")
+						<span class="text-[17px] font-medium">Atrás</span>
+					</a>
+					<h2 class="text-[17px] font-semibold">Configuración de Productos</h2>
+					<div class="w-12"></div>
 				</div>
-				<h1 class="text-2xl font-bold text-gray-900">Gestionar Productos</h1>
-				<p class="mt-2 text-gray-500">Administra los productos disponibles en el kiosco.</p>
-			</div>
-
-			<!-- Formulario para agregar producto (colapsable) -->
-			<div
-				x-data="{ abierto: true }"
-				class="bg-white rounded-2xl shadow-sm border border-gray-200 mb-6 overflow-hidden"
-			>
-				<button
-					type="button"
-					@click="abierto = !abierto"
-					class="w-full flex items-center justify-between p-5 text-left hover:bg-gray-50 transition-colors"
-				>
-					<span class="text-base font-semibold text-gray-900">Agregar Producto</span>
-					<svg
-						class="w-5 h-5 text-gray-400 transition-transform duration-200"
-						:class="abierto ? 'rotate-180' : ''"
-						fill="none" stroke="currentColor" viewBox="0 0 24 24"
-					>
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-					</svg>
-				</button>
-				<div x-show="abierto" class="px-5 pb-5 border-t border-gray-100">
-					<form
-						hx-post="/setup/producto"
-						hx-target="#lista-productos"
-						hx-swap="afterbegin"
-						hx-on::after-request="if(event.detail.successful) this.reset()"
-						class="space-y-4 pt-4"
-					>
-						<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-							<div>
-								<label class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
-								<input
-									type="text"
-									name="nombre"
-									required
-									placeholder="Gelatina"
-									class="block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-								/>
-							</div>
-							<div>
-								<label class="block text-sm font-medium text-gray-700 mb-1">Precio (S/)</label>
-								<input
-									type="number"
-									name="precio_unitario"
-									required
-									placeholder="1.50"
-									step="0.01"
-									min="0.01"
-									class="block w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-								/>
+			</nav>
+			<div class="max-w-2xl lg:max-w-6xl mx-auto px-4 pt-6">
+				<!-- Cabecera Principal -->
+				<header class="mb-8 lg:mb-12">
+					<h1 class="text-[34px] font-bold tracking-tight text-gray-900 leading-tight">Productos</h1>
+					<p class="text-[17px] text-[#8E8E93] font-medium mt-1">Catálogo general del kiosco</p>
+				</header>
+				<div class="lg:grid lg:grid-cols-12 lg:gap-10 lg:items-start">
+					<!-- COLUMNA IZQUIERDA: Formulario de Registro (Sticky) -->
+					<aside class="lg:col-span-5 mb-10 lg:mb-0 lg:sticky lg:top-24">
+						<h3 class="px-4 mb-3 text-[13px] font-medium text-[#8E8E93] uppercase tracking-wide">NUEVO PRODUCTO</h3>
+						<div class="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-200">
+							<form
+								hx-post="/setup/producto"
+								hx-target="#lista-productos"
+								hx-swap="afterbegin"
+								hx-on::after-request="if(event.detail.successful) this.reset()"
+								class="divide-y divide-gray-100"
+							>
+								<div class="flex items-center px-5 py-4">
+									<label class="w-24 text-[17px] text-gray-600 font-medium">Nombre</label>
+									<input
+										type="text"
+										name="nombre"
+										placeholder="Ej. Gelatina"
+										required
+										class="flex-1 border-none focus:ring-0 text-[17px] p-0 text-gray-900 font-medium placeholder-gray-300"
+									/>
+								</div>
+								<div class="flex items-center px-5 py-4">
+									<label class="w-24 text-[17px] text-gray-600 font-medium">Precio</label>
+									<div class="flex-1 flex items-center">
+										<span class="text-gray-400 mr-1 text-[17px]">S/</span>
+										<input
+											type="number"
+											name="precio_unitario"
+											step="0.01"
+											min="0.01"
+											placeholder="0.00"
+											required
+											class="w-full border-none focus:ring-0 text-[17px] p-0 text-[#007AFF] font-bold placeholder-gray-300"
+										/>
+									</div>
+								</div>
+								<div class="p-4 bg-gray-50/50">
+									<button type="submit" class="w-full py-4 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold rounded-2xl transition-all shadow-lg shadow-blue-200 flex items-center justify-center gap-2 text-lg">
+										Agregar al Catálogo
+									</button>
+								</div>
+							</form>
+						</div>
+					</aside>
+					<!-- COLUMNA DERECHA: Lista de productos -->
+					<main class="lg:col-span-7">
+						<div class="flex items-center justify-between px-4 mb-3">
+							<h3 class="text-[13px] font-medium text-[#8E8E93] uppercase tracking-wide">PRODUCTOS REGISTRADOS</h3>
+							<span class="text-[13px] font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
+								{ fmt.Sprintf("%d total", len(productos)) }
+							</span>
+						</div>
+						<div class="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-200">
+							<div id="lista-productos" class="divide-y divide-gray-100">
+								if len(productos) == 0 {
+									<div class="text-center py-20 px-6">
+										<div class="bg-[#F2F2F7] w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+											@components.IconProducts("w-10 h-10 text-[#AEAEB2]")
+										</div>
+										<h3 class="text-[19px] font-bold text-gray-900">Sin productos</h3>
+										<p class="text-[15px] text-[#8E8E93] mt-2 max-w-[240px] mx-auto">Comienza agregando productos en el panel lateral.</p>
+									</div>
+								}
+								for _, prod := range productos {
+									@FilaProducto(prod)
+								}
 							</div>
 						</div>
-						<button
-							type="submit"
-							class="w-full px-4 py-2 bg-indigo-600 text-white font-medium rounded-md hover:bg-indigo-700"
-						>Agregar Producto</button>
-					</form>
+						<!-- Botón Continuar (Solo móvil para facilitar flujo) -->
+						<div class="mt-8 lg:hidden px-4">
+							<a href="/" class="block w-full py-4 bg-gray-900 text-white text-center font-bold rounded-2xl active:scale-[0.98] transition-all">
+								Volver al Sistema
+							</a>
+						</div>
+					</main>
 				</div>
 			</div>
-
-			<!-- Lista de productos -->
-			<div class="bg-white rounded-2xl shadow-sm border border-gray-200 mb-6">
-				<div class="p-5 border-b border-gray-100 flex items-center justify-between">
-					<h2 class="text-base font-semibold text-gray-900">Productos Registrados</h2>
-					if len(productos) > 0 {
-						{{ activos := 0 }}
-						for _, p := range productos {
-							if p.EstaActivo {
-								{{ activos++ }}
-							}
-						}
-						<span class="text-xs text-gray-400">
-							{ fmt.Sprintf("%d activos", activos) }
-							if len(productos) > activos {
-								{ fmt.Sprintf(" · %d inactivos", len(productos)-activos) }
-							}
-						</span>
-					}
-				</div>
-				<div class="p-4">
-					<div id="lista-productos" class="space-y-2">
-						if len(productos) == 0 {
-							<p class="text-sm text-gray-400 text-center py-8">Aún no hay productos. Agrega el primero arriba.</p>
-						}
-						for _, prod := range productos {
-							@FilaProducto(prod)
-						}
-					</div>
-				</div>
-			</div>
-
-			<!-- Volver -->
-			<a
-				href="/"
-				class="block w-full text-center px-6 py-3 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200"
-			>← Volver al Sistema</a>
 		</div>
+		<style>
+        .transition-active:active {
+            opacity: 0.5;
+            transform: scale(0.97);
+        }
+        [x-cloak] { display: none !important; }
+        input:focus { outline: none; }
+    </style>
 	}
 }
