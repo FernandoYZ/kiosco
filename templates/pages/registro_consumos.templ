@@ -125,48 +125,18 @@ templ RegistroConsumos() {
 					</div>
 				</nav>
 
-				<!-- Selector de Semana y Días -->
-				<div class="bg-white">
-					<div class="max-w-2xl lg:max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-6 mb-4 sm:mb-6">
-						<!-- Navegación de Semana + Etiqueta -->
-						<div class="flex items-center justify-between gap-2 sm:gap-4 mb-3 sm:mb-4">
-							<button
-								@click="irASemanaAnterior()"
-								class="flex-shrink-0 p-2 sm:p-2.5 text-[#007AFF] hover:bg-blue-50 rounded-lg active:scale-90 transition-all"
-								title="Semana anterior"
-							>
-								<svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path>
-								</svg>
-							</button>
-							<div class="text-center flex-1 min-w-0">
-								<h3 class="hidden sm:block text-[13px] font-bold text-[#8E8E93] uppercase tracking-wide">SELECCIONA DÍA</h3>
-								<h3 class="sm:hidden text-[12px] font-bold text-[#8E8E93] uppercase tracking-wide">DÍA</h3>
-							</div>
-							<button
-								@click="irASemanaProxima()"
-								class="flex-shrink-0 p-2 sm:p-2.5 text-[#007AFF] hover:bg-blue-50 rounded-lg active:scale-90 transition-all"
-								title="Semana siguiente"
-							>
-								<svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path>
-								</svg>
-							</button>
-						</div>
-
-						<!-- Botones de Días (Scroll horizontal) -->
-						<div class="flex gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar pb-1 [-webkit-overflow-scrolling:touch]">
+				<!-- Selector de Día -->
+				<div class="bg-white px-3 sm:px-4 py-3 sm:py-4">
+					<div class="max-w-2xl lg:max-w-6xl mx-auto">
+						<select
+							x-model="fechaSeleccionada"
+							class="w-full bg-white border border-gray-300 rounded-xl px-4 py-3 text-[15px] sm:text-[17px] font-medium text-gray-900 focus:border-[#007AFF] focus:ring-2 focus:ring-blue-100 transition-all appearance-none cursor-pointer"
+							style="background-image: url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 fill=%27none%27 viewBox=%270 0 20 20%27%3E%3Cpath stroke=%27%23666%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27 stroke-width=%271.5%27 d=%27M6 8l4 4 4-4%27/%3E%3C/svg%3E'); background-position: right 0.75rem center; background-repeat: no-repeat; background-size: 1.25em 1.25em; padding-right: 2.5rem;"
+						>
 							<template x-for="(dia, idx) in diasDeSemana()" :key="idx">
-								<button
-									@click="seleccionarFecha(idx)"
-									:class="fechaSeleccionada === dia.fecha ? 'bg-[#007AFF] text-white shadow-md' : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300'"
-									class="flex-shrink-0 px-2.5 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl text-[12px] sm:text-[14px] font-semibold whitespace-nowrap transition-all active:scale-95"
-								>
-									<div x-text="dia.nombre" class="block text-[10px] sm:text-[12px] leading-tight mb-0.5"></div>
-									<div x-text="dia.fechaFormato" class="block text-[11px] sm:text-[13px] font-bold leading-tight"></div>
-								</button>
+								<option :value="dia.fecha" x-text="dia.nombre + ' - ' + dia.fechaFormato"></option>
 							</template>
-						</div>
+						</select>
 					</div>
 				</div>
 
