@@ -132,6 +132,9 @@ document.addEventListener('DOMContentLoaded', () => {
 // Registro de Consumos - Lógica de Alpine.js
 // ---------------------------------------------------------------------------
 window.registroApp = function() {
+  const today = new Date();
+  const [semanaInicio, semanaFin] = calcularSemana(today);
+
   const app = {
     view: 'sectores',
     sector: null,
@@ -142,6 +145,8 @@ window.registroApp = function() {
     productos: [],
     openId: null,
     bandeja: {},
+    semanaInicio,
+    fechaSeleccionada: formatDate(today),
 
     async seleccionarSector(s) {
       this.cargando = true;
@@ -173,6 +178,37 @@ window.registroApp = function() {
       this.openId = null;
       this.search = '';
       this.gradoActivo = 'Todos';
+      const today = new Date();
+      const [semanaInicio, _] = calcularSemana(today);
+      this.semanaInicio = semanaInicio;
+      this.fechaSeleccionada = formatDate(today);
+    },
+
+    irASemanaAnterior() {
+      this.semanaInicio = restarDias(this.semanaInicio, 7);
+    },
+
+    irASemanaProxima() {
+      this.semanaInicio = sumarDias(this.semanaInicio, 7);
+    },
+
+    seleccionarFecha(offset) {
+      this.fechaSeleccionada = formatDate(sumarDias(this.semanaInicio, offset));
+    },
+
+    diasDeSemana() {
+      const dias = [];
+      const nombres = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+      for (let i = 0; i < 6; i++) {
+        const fecha = sumarDias(this.semanaInicio, i);
+        dias.push({
+          nombre: nombres[i],
+          fecha: formatDate(fecha),
+          fechaFormato: formatDateSpanish(fecha),
+          esHoy: formatDate(fecha) === formatDate(new Date())
+        });
+      }
+      return dias;
     },
 
     toggle(id) {
@@ -217,7 +253,7 @@ window.registroApp = function() {
           id_producto: p.id,
           cantidad: p.qty
         })),
-        fecha: new Date().toISOString().split('T')[0]
+        fecha: this.fechaSeleccionada
       };
 
       try {
@@ -258,3 +294,47 @@ window.registroApp = function() {
   };
   return app;
 };
+
+// Helper: Calcular lunes y sábado de una semana
+function calcularSemana(fecha) {
+  const d = new Date(fecha);
+  const diaSemana = d.getDay(); // 0 = Domingo, 1 = Lunes, ...
+  const diferencia = diaSemana === 0 ? -6 : 1 - diaSemana; // Diferencia para llegar al lunes
+  const lunes = new Date(d);
+  lunes.setDate(d.getDate() + diferencia);
+  lunes.setHours(0, 0, 0, 0);
+
+  const sabado = new Date(lunes);
+  sabado.setDate(lunes.getDate() + 5);
+  sabado.setHours(23, 59, 59, 0);
+
+  return [lunes, sabado];
+}
+
+// Helper: Formato YYYY-MM-DD
+function formatDate(fecha) {
+  const d = new Date(fecha);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+// Helper: Formato legible para el usuario
+function formatDateSpanish(fecha) {
+  const d = new Date(fecha);
+  const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  return `${d.getDate()} ${meses[d.getMonth()]}`;
+}
+
+// Helper: Sumar días
+function sumarDias(fecha, dias) {
+  const d = new Date(fecha);
+  d.setDate(d.getDate() + dias);
+  return d;
+}
+
+// Helper: Restar días
+function restarDias(fecha, dias) {
+  return sumarDias(fecha, -dias);
+}

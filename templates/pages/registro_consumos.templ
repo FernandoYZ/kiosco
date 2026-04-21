@@ -125,6 +125,46 @@ templ RegistroConsumos() {
 					</div>
 				</nav>
 
+				<!-- Selector de Semana y Días -->
+				<div class="sticky top-16 z-10 bg-white/95 backdrop-blur-sm border-b border-gray-200/70 px-4 py-4">
+					<div class="max-w-2xl lg:max-w-6xl mx-auto">
+						<!-- Navegación de Semana -->
+						<div class="flex items-center justify-between mb-4">
+							<button
+								@click="irASemanaAnterior()"
+								class="flex items-center text-[#007AFF] active:opacity-50 transition-opacity"
+							>
+								<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path>
+								</svg>
+							</button>
+							<h3 class="text-[13px] font-bold text-[#8E8E93] uppercase tracking-wide">SELECCIONA DÍA</h3>
+							<button
+								@click="irASemanaProxima()"
+								class="flex items-center text-[#007AFF] active:opacity-50 transition-opacity"
+							>
+								<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path>
+								</svg>
+							</button>
+						</div>
+
+						<!-- Botones de Días -->
+						<div class="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+							<template x-for="(dia, idx) in diasDeSemana()" :key="idx">
+								<button
+									@click="seleccionarFecha(idx)"
+									:class="fechaSeleccionada === dia.fecha ? 'bg-[#007AFF] text-white' : 'bg-white text-gray-600 border border-gray-200'"
+									class="flex-shrink-0 px-3 py-2.5 rounded-lg text-[13px] font-semibold whitespace-nowrap transition-all shadow-sm active:scale-95"
+								>
+									<div x-text="dia.nombre" class="block text-[11px] text-center mb-0.5"></div>
+									<div x-text="dia.fechaFormato" class="block text-center"></div>
+								</button>
+							</template>
+						</div>
+					</div>
+				</div>
+
 				<!-- Header -->
 				<div class="max-w-2xl lg:max-w-6xl mx-auto px-4 pt-8 mb-8">
 					<header>
