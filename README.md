@@ -27,7 +27,11 @@ Para probar el sistema sin configuración previa, utiliza:
 - **Setup de estudiantes:** CRUD completo con habilitación/deshabilitación
 - **Setup de productos:** gestión de productos disponibles en el kiosco
 - **Autenticación con sesiones firmadas:** cookies HMAC-SHA256, Argon2id para contraseñas
+- **CSRF protection:** tokens únicos por sesión, validación en todos los formularios POST
+- **Rate limiting:** limitación de intentos de login (5 intentos en 15 minutos)
+- **Concurrency management:** límite de 30 conexiones HTTP concurrentes
 - **Binario autocontenido:** estáticos y schema SQL embebidos en el binario
+- **API REST:** endpoint para descarga de BD comprimida (sincronización mobile)
 
 > [!TIP]
 > Este sistema está pensado para entornos escolares con recursos limitados: instalación simple y sin dependencias externas.
@@ -108,7 +112,7 @@ Variables de entorno opcionales
 
 | Variable | Por defecto |
 |----------|-------------|
-| `HOST` | `0.0.0.0` |
+| `HOST` | `localhost` |
 | `PORT` | `3200` |
 
 > [!NOTE]
@@ -122,6 +126,49 @@ Los assets de entrada están en `assets/`:
 - **`assets/main.js`** — punto de entrada de Bun. Agregar aquí código JavaScript propio.
 
 Al ejecutar `bun run start:static`, estos archivos se compilan y minimizan en `public/dist/`. Los archivos en `public/` se embeben en el binario al compilar con `go build`.
+
+---
+## Seguridad
+
+### CSRF Protection
+Todos los formularios POST están protegidos contra ataques CSRF:
+- **Token por sesión:** cada usuario recibe un token único reutilizable
+- **Validación dual:** verificación en cookie + campo oculto o header
+- **Inyección automática:** tokens se inyectan en contexto para templates Templ
+
+### Rate Limiting
+- **Login:** máximo 5 intentos fallidos en 15 minutos por IP
+- **Bloqueo automático:** redirección a `/login?error=rate_limit`
+- **Reseteo:** contador se limpia al login exitoso
+
+### Concurrency Management
+- **Límite global:** máximo 30 conexiones HTTP concurrentes
+- **Protección:** devuelve HTTP 503 si se excede el límite
+- **Graceful degradation:** previene sobrecarga en SQLite
+
+### WAL Mode (Write-Ahead Logging)
+- Base de datos SQLite optimizada para concurrencia
+- Mejora performance en multi-usuario
+- Requiere migración: ver `SETUP_WAL_PRODUCCION.md`
+
+---
+## API REST
+
+### Endpoints
+
+#### Descarga de Base de Datos
+```http
+GET /api/database/download
+Authorization: Cookie: kiosco_token=<token>
+Accept: application/gzip
+```
+
+**Respuesta:**
+- Status: `200 OK`
+- Content-Type: `application/gzip`
+- Body: archivo `.db` comprimido
+
+**Uso:** app mobile descarga la BD completa para funcionar offline
 
 ---
 ## Rutas de la aplicación
@@ -173,6 +220,30 @@ kiosco/
 ```
 ---
 
+---
+## App Mobile Android
+
+Kiosco Mobile es la versión nativa de Android (MVP 1.0). Los estudiantes pueden:
+- **Descargar la BD** una sola vez al primer login
+- **Consultar consumos** sin conexión a internet
+- **Ver resumen** de deudas y pagos
+- **Compartir por WhatsApp** un resumen de consumos como imagen
+
+### Arquitectura
+- **Offline-first:** todas las queries usan SQLite local
+- **Sincronización manual:** botón para re-descargar `.db` completo
+- **Autenticación:** token HMAC-SHA256 almacenado en DataStore encriptado
+
+### Dependencias clave
+- **Room 3.0** para SQLite local
+- **Retrofit 2 + OkHttp 5** para descargar `.db`
+- **DataStore** para almacenar token de forma segura (reemplaza EncryptedSharedPreferences deprecado)
+- **Material Design 3** con tema personalizado (Apple-like)
+
+### Especificación completa
+Ver `prompt.md` (documentación interna) para detalles completos del MVP.
+
+---
 ## Contacto
 
 **Desarrollador:** Fernando YZ
