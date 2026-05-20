@@ -55,6 +55,10 @@ Para probar el sistema sin configuración previa, utiliza:
 |---------------|------------|
 | <img src="assets/images/captura_setup_estudiantes.png" width="100%"> | <img src="assets/images/captura_editar_producto.png" width="100%"> |
 
+| **Registro** | **Resumen de consumos** |
+|---------------|------------|
+| <img src="assets/images/captura_registro_in_roles.png" width="100%"> | <img src="assets/images/captura_resumen_consumo.png" width="100%"> |
+
 ---
 ## Tecnologías utilizadas
 
