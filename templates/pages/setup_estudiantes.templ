@@ -2,6 +2,7 @@ package pages
 
 import (
 	"fmt"
+	"kiosco/internal/middleware"
 	"kiosco/internal/models"
 	"kiosco/internal/utils"
 	"kiosco/templates/components"
@@ -80,6 +81,7 @@ templ FilaEstudiante(est models.Estudiante, grados []models.InfoGrado) {
 				hx-swap="outerHTML"
 				class="space-y-4"
 			>
+				@components.CSRFTokenField(ctx.Value(middleware.CSRFTokenContextKey).(string))
 				<input type="hidden" name="id_estudiante" value={ fmt.Sprintf("%d", est.IdEstudiante) }/>
 				
 				<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -162,6 +164,7 @@ templ SetupEstudiantes(grados []models.InfoGrado, estudiantes []models.Estudiant
 								hx-on::after-request="if(event.detail.successful) this.reset()"
 								class="divide-y divide-gray-100"
 							>
+								@components.CSRFTokenField(ctx.Value(middleware.CSRFTokenContextKey).(string))
 								<div class="flex items-center px-5 py-4 gap-4">
 									<label class="w-20 text-[17px] text-gray-500 font-medium">Apellidos</label>
 									<input

@@ -2,6 +2,7 @@ package pages
 
 import (
 	"fmt"
+	"kiosco/internal/middleware"
 	"kiosco/internal/models"
 	"kiosco/internal/utils"
 	"kiosco/templates/components"
@@ -51,6 +52,7 @@ templ EditarPagos(datos models.DatosEditarPagos) {
                     <h3 class="px-4 mb-3 text-[13px] font-medium text-[#8E8E93] uppercase tracking-wide">REGISTRAR NUEVO PAGO</h3>
                     <div class="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-200">
                         <form method="POST" action="/registrar-pago" class="divide-y divide-gray-100">
+                            @components.CSRFTokenField(ctx.Value(middleware.CSRFTokenContextKey).(string))
                             <input type="hidden" name="id_estudiante" value={ fmt.Sprintf("%d", datos.IdEstudiante) }/>
                             <input type="hidden" name="fecha" value={ utils.FormatearFechaCompleta(datos.FechaInicio) }/>
                             <input type="hidden" name="grado" value={ fmt.Sprintf("%d", datos.GradoSeleccionado) }/>
@@ -139,17 +141,25 @@ templ EditarPagos(datos models.DatosEditarPagos) {
                                             </div>
                                         </div>
                                         
-                                        <button
-                                            type="button"
+                                        <form
                                             hx-post="/eliminar-pago"
                                             hx-target={ "#pago-" + fmt.Sprintf("%d", pago.IdPago) }
                                             hx-swap="outerHTML"
-                                            hx-confirm={ "¿Estás seguro de eliminar este pago?" }
-                                            hx-vals={ fmt.Sprintf(`{"id_pago":"%d","id_estudiante":"%d","fecha":"%s","grado":"%d"}`, pago.IdPago, datos.IdEstudiante, utils.FormatearFechaCompleta(datos.FechaInicio), datos.GradoSeleccionado) }
-                                            class="text-[#FF3B30] text-[15px] font-semibold hover:text-red-700 transition-colors px-3 py-2 -mr-2"
+                                            style="display: inline;"
                                         >
-                                            Eliminar
-                                        </button>
+                                            @components.CSRFTokenField(ctx.Value(middleware.CSRFTokenContextKey).(string))
+                                            <input type="hidden" name="id_pago" value={ fmt.Sprintf("%d", pago.IdPago) }/>
+                                            <input type="hidden" name="id_estudiante" value={ fmt.Sprintf("%d", datos.IdEstudiante) }/>
+                                            <input type="hidden" name="fecha" value={ utils.FormatearFechaCompleta(datos.FechaInicio) }/>
+                                            <input type="hidden" name="grado" value={ fmt.Sprintf("%d", datos.GradoSeleccionado) }/>
+                                            <button
+                                                type="submit"
+                                                onclick={ `return confirm('¿Estás seguro de eliminar este pago?')` }
+                                                class="text-[#FF3B30] text-[15px] font-semibold hover:text-red-700 transition-colors px-3 py-2 -mr-2 border-none bg-none cursor-pointer"
+                                            >
+                                                Eliminar
+                                            </button>
+                                        </form>
                                     </div>
                                 }
                             </div>
