@@ -67,3 +67,6 @@ errores_terminal.txt
 
 # Archivos de configuración sensible (credenciales)
 credenciales.txt
+
+# Documentación interna (no versionada)
+prompt.md
