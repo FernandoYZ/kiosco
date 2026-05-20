@@ -51,8 +51,5 @@ func ConfigurarRutas(controlador *controllers.Controlador) *http.ServeMux {
 	mux.HandleFunc("GET /registro/menor", p(controlador.RegistroSector))
 	mux.HandleFunc("GET /registro/mayor", p(controlador.RegistroSector))
 
-	// API endpoints para app mobile
-	mux.HandleFunc("GET /api/database/download", p(controlador.DescargarBD))
-
 	return mux
 }
