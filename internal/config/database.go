@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	_ "modernc.org/sqlite"
 )
@@ -36,6 +37,19 @@ func DB() *sql.DB {
 			log.Fatal("Error al abrir DB:", err)
 		}
 		instancia.SetMaxOpenConns(5)
+		instancia.SetMaxIdleConns(2)
+		instancia.SetConnMaxLifetime(10 * time.Minute)
+
+		pragmas := []string{
+			"PRAGMA journal_mode=WAL",
+			"PRAGMA synchronous=NORMAL",
+			"PRAGMA busy_timeout=5000",
+		}
+		for _, pragma := range pragmas {
+			if _, err := instancia.Exec(pragma); err != nil {
+				log.Printf("Warning: PRAGMA %s failed: %v", pragma, err)
+			}
+		}
 
 		if err := instancia.Ping(); err != nil {
 			log.Fatal("No se pudo conectar a la DB:", err)

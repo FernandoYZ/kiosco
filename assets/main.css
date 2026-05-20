@@ -1,9 +1,6 @@
 @import "tailwindcss";
 @import "./font.css";
 
-@view-transition {
-  navigation: auto;
-}
 
 @theme {
     --color-primario: #4f46e5;
@@ -64,7 +61,7 @@ a, button, input, label {
 input[type="text"],
 input[type="email"],
 input[type="password"],
-input[type="number"],
+input[type="number"]:not([readonly]),
 input[type="date"],
 input[type="search"],
 select,
@@ -132,4 +129,3 @@ textarea {
         font-size: 0.75rem;
     }
 }
-

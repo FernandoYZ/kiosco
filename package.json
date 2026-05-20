@@ -7,7 +7,8 @@
     "js:canvas": "curl -L https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js -o public/dist/canvas.min.js",
     "js:collapse": "curl -L https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js -o public/dist/collapse.min.js",
     "js:build": "bun build assets/main.js --minify --outfile=public/dist/bundle.min.js",
-    "start:static": "bun css:build && bun js:alpine && bun js:htmx && bun js:canvas && bun js:collapse && bun js:build"
+    "start:static": "bun css:build && bun js:alpine && bun js:htmx && bun js:canvas && bun js:collapse && bun js:build",
+    "dev": "templ generate && bun start:static && clear && go run ./cmd/kiosco"
   },
   "dependencies": {
     "@tailwindcss/cli": "^4.2.1",

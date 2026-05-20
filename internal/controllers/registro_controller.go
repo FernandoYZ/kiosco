@@ -1,34 +1,59 @@
 package controllers
 
 import (
-	"encoding/json"
+	"fmt"
+	"kiosco/internal/auth"
 	"kiosco/internal/models"
 	"kiosco/templates/pages"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
 // RegistroConsumos — GET /registro
-// Renderiza la página de registro con selector de sector
+// Muestra el selector de sectores
 func (m *Controlador) RegistroConsumos(w http.ResponseWriter, r *http.Request) {
+	if !validarAuth(r) {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	// Redirigir /registro/ a /registro (sin trailing slash)
+	if r.URL.Path == "/registro/" {
+		http.Redirect(w, r, "/registro", http.StatusMovedPermanently)
+		return
+	}
+
 	if err := pages.RegistroConsumos().Render(r.Context(), w); err != nil {
-		log.Printf("Error al renderizar registro: %v", err)
+		log.Printf("Error al renderizar selector: %v", err)
 	}
 }
 
-// ObtenerEstudiantesSector — GET /registro/estudiantes?sector=menor|mayor
-// Devuelve JSON con estudiantes activos del sector + productos activos
-func (m *Controlador) ObtenerEstudiantesSector(w http.ResponseWriter, r *http.Request) {
-	sector := r.URL.Query().Get("sector")
+// RegistroSector — GET /registro/{sector}
+// Devuelve página completa con layout y lista de estudiantes como enlaces
+func (m *Controlador) RegistroSector(w http.ResponseWriter, r *http.Request) {
+	if !validarAuth(r) {
+		http.Error(w, "No autenticado", http.StatusUnauthorized)
+		return
+	}
+
+	sector := strings.TrimPrefix(r.URL.Path, "/registro/")
+	fecha := r.URL.Query().Get("fecha")
+
 	if sector != "menor" && sector != "mayor" {
 		http.Error(w, "Sector inválido", http.StatusBadRequest)
 		return
 	}
 
+	if fecha == "" {
+		fecha = time.Now().Format("2006-01-02")
+	}
+
+	// Cargar estudiantes y productos
 	estudiantes, err := m.servicio.Repo.ObtenerEstudiantesActivosPorSector(sector)
 	if err != nil {
-		log.Printf("Error al obtener estudiantes del sector %s: %v", sector, err)
+		log.Printf("Error al obtener estudiantes: %v", err)
 		http.Error(w, "Error al cargar estudiantes", http.StatusInternalServerError)
 		return
 	}
@@ -40,79 +65,57 @@ func (m *Controlador) ObtenerEstudiantesSector(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]any{
-		"estudiantes": estudiantes,
-		"productos":   productos,
-	})
+	fechas := generarFechasSemana(fecha)
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+
+	if err := pages.RegistroConsumosCon(sector, fechas, fecha, estudiantes, productos).Render(r.Context(), w); err != nil {
+		log.Printf("Error al renderizar página: %v", err)
+	}
 }
 
-// GuardarRegistroBatch — POST /registro/guardar
-// Body JSON: { "items": [{ "id_estudiante": 1, "id_producto": 5, "cantidad": 2 }], "fecha": "2025-04-11" }
-func (m *Controlador) GuardarRegistroBatch(w http.ResponseWriter, r *http.Request) {
-	var payload struct {
-		Items []struct {
-			IdEstudiante int `json:"id_estudiante"`
-			IdProducto   int `json:"id_producto"`
-			Cantidad     int `json:"cantidad"`
-		} `json:"items"`
-		Fecha string `json:"fecha"`
-	}
+// Helpers
 
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		http.Error(w, "Payload inválido", http.StatusBadRequest)
-		return
-	}
-
-	fecha, err := time.Parse("2006-01-02", payload.Fecha)
+func validarAuth(r *http.Request) bool {
+	cookie, err := r.Cookie(auth.CookieNombre)
 	if err != nil {
-		http.Error(w, "Fecha inválida", http.StatusBadRequest)
-		return
+		return false
 	}
-
-	// Obtener precios de productos activos
-	productos, err := m.servicio.Repo.ObtenerProductosActivos()
-	if err != nil {
-		log.Printf("Error al obtener productos: %v", err)
-		http.Error(w, "Error al procesar solicitud", http.StatusInternalServerError)
-		return
-	}
-
-	precioMap := make(map[int]float64)
-	for _, p := range productos {
-		precioMap[p.IdProducto] = p.PrecioUnitario
-	}
-
-	// Construir lista de consumos a insertar
-	consumos := make([]models.Consumo, 0, len(payload.Items))
-	for _, item := range payload.Items {
-		if item.Cantidad <= 0 {
-			continue
-		}
-
-		precio, ok := precioMap[item.IdProducto]
-		if !ok {
-			http.Error(w, "Producto no válido", http.StatusBadRequest)
-			return
-		}
-
-		consumos = append(consumos, models.Consumo{
-			IdEstudiante:        item.IdEstudiante,
-			IdProducto:          item.IdProducto,
-			Cantidad:            item.Cantidad,
-			PrecioUnitarioVenta: precio,
-			FechaConsumo:        fecha,
-		})
-	}
-
-	// Registrar batch con transacción
-	if err := m.servicio.Repo.RegistrarConsumosBatch(consumos); err != nil {
-		log.Printf("Error al registrar consumos batch: %v", err)
-		http.Error(w, "Error al guardar consumos", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+	_, _, ok := auth.VerificarToken(cookie.Value)
+	return ok
 }
+
+func generarFechasSemana(fechaStr string) []models.DiaFecha {
+	fecha, _ := time.Parse("2006-01-02", fechaStr)
+
+	diaSemana := fecha.Weekday()
+	var diferencia int
+	if diaSemana == 0 {
+		diferencia = -6
+	} else {
+		diferencia = 1 - int(diaSemana)
+	}
+
+	lunes := fecha.AddDate(0, 0, diferencia)
+	lunes = time.Date(lunes.Year(), lunes.Month(), lunes.Day(), 0, 0, 0, 0, lunes.Location())
+
+	nombres := []string{"Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"}
+	meses := []string{"Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"}
+
+	hoy := time.Now().Format("2006-01-02")
+	dias := make([]models.DiaFecha, 6)
+
+	for i := 0; i < 6; i++ {
+		d := lunes.AddDate(0, 0, i)
+		fechaFormato := d.Format("2006-01-02")
+		dias[i] = models.DiaFecha{
+			Nombre:       nombres[i],
+			Fecha:        fechaFormato,
+			FechaFormato: fmt.Sprintf("%d %s", d.Day(), meses[int(d.Month())-1]),
+			EsHoy:        fechaFormato == hoy,
+		}
+	}
+
+	return dias
+}
+

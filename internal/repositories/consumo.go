@@ -84,7 +84,9 @@ func (r *Repositorio) RegistrarConsumo(consumo models.Consumo) error {
 	return err
 }
 
-// ActualizarConsumo actualiza, inserta o elimina un consumo según la cantidad
+// ActualizarConsumo actualiza, inserta o elimina un consumo según la cantidad.
+// UPSERT: safe for idempotent resubmission — SELECT → INSERT (qty>0) | UPDATE (row exists, qty>0) | DELETE (qty<=0) | noop (no row, qty<=0).
+// Two identical submissions always produce exactly 1 row; qty=0 deletes the row.
 func (r *Repositorio) ActualizarConsumo(idEstudiante, idProducto int, fecha time.Time, cantidad int, precioUnitario float64) error {
 	fechaStr := fecha.Format("2006-01-02")
 
@@ -137,6 +139,79 @@ func (r *Repositorio) ObtenerConsumoExistente(idEstudiante, idProducto int, fech
 		return 0, nil
 	}
 	return cantidad, err
+}
+
+// ObtenerResumenDiario retorna los consumos del día agrupados por estudiante para un sector.
+// sector: "menor" (id_grado IN 1,2,3,4) | "mayor" (id_grado IN 5,6,7)
+func (r *Repositorio) ObtenerResumenDiario(sector string, fecha time.Time) ([]models.ResumenEstudiante, error) {
+	var gradoList string
+	if sector == "menor" {
+		gradoList = "1,2,3,4"
+	} else {
+		gradoList = "5,6,7"
+	}
+
+	query := `
+		SELECT
+			e.id_estudiante,
+			e.nombres,
+			e.apellidos,
+			g.anio_grado || ' ' || g.nivel_grado AS nombre_grado,
+			p.nombre AS nombre_producto,
+			c.cantidad
+		FROM consumos c
+		JOIN estudiantes e ON c.id_estudiante = e.id_estudiante
+		JOIN grados g ON e.id_grado = g.id_grado
+		JOIN productos p ON c.id_producto = p.id_producto
+		WHERE c.fecha_consumo = ?
+		  AND e.id_grado IN (` + gradoList + `)
+		ORDER BY e.apellidos, e.nombres, p.nombre
+	`
+
+	rows, err := r.db.Query(query, fecha.Format("2006-01-02"))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	// Agrupación en memoria: slice para preservar orden de inserción
+	var orden []int
+	index := make(map[int]*models.ResumenEstudiante)
+
+	for rows.Next() {
+		var idEst int
+		var nombres, apellidos, nombreGrado, nombreProducto string
+		var cantidad int
+
+		if err := rows.Scan(&idEst, &nombres, &apellidos, &nombreGrado, &nombreProducto, &cantidad); err != nil {
+			return nil, err
+		}
+
+		if _, ok := index[idEst]; !ok {
+			index[idEst] = &models.ResumenEstudiante{
+				IdEstudiante: idEst,
+				Nombres:      nombres,
+				Apellidos:    apellidos,
+				NombreGrado:  nombreGrado,
+			}
+			orden = append(orden, idEst)
+		}
+
+		index[idEst].Items = append(index[idEst].Items, models.ItemConsumo{
+			NombreProducto: nombreProducto,
+			Cantidad:       cantidad,
+		})
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	resumenes := make([]models.ResumenEstudiante, 0, len(orden))
+	for _, id := range orden {
+		resumenes = append(resumenes, *index[id])
+	}
+	return resumenes, nil
 }
 
 // RegistrarConsumosBatch inserta múltiples consumos en una transacción atómica

@@ -52,7 +52,7 @@ Thumbs.db
 env.bat
 
 # Archivos generados por el proyecto
-bin/
+
 *_templ.go
 release/
 database/

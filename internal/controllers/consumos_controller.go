@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"fmt"
+	"kiosco/internal/auth"
 	"kiosco/internal/models"
 	"kiosco/templates/pages"
 	"log"
@@ -83,6 +84,12 @@ func (m *Controlador) EditarConsumos(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	sector := r.URL.Query().Get("sector")
+	if sector != "" && sector != "menor" && sector != "mayor" {
+		http.Error(w, "Sector inválido: debe ser 'menor' o 'mayor'", http.StatusBadRequest)
+		return
+	}
+
 	estudiantes, err := m.servicio.Repo.ObtenerEstudiantesPorGrado(0)
 	if err != nil {
 		http.Error(w, "Error al obtener estudiante", http.StatusInternalServerError)
@@ -123,6 +130,11 @@ func (m *Controlador) EditarConsumos(w http.ResponseWriter, r *http.Request) {
 		consumosPorDia[c.IdEstudiante][fechaKey][c.IdProducto] = c.Cantidad
 	}
 
+	puedeEditar := false
+	if cookie, err := r.Cookie(auth.CookieNombre); err == nil {
+		_, puedeEditar, _ = auth.VerificarToken(cookie.Value)
+	}
+
 	datos := models.DatosEditarConsumos{
 		IdEstudiante:      idEstudiante,
 		NombreEstudiante:  nombreEstudiante,
@@ -130,6 +142,8 @@ func (m *Controlador) EditarConsumos(w http.ResponseWriter, r *http.Request) {
 		Productos:         productos,
 		Consumos:          consumosPorDia,
 		GradoSeleccionado: idGrado,
+		Sector:            sector,
+		PuedeEditar:       puedeEditar,
 	}
 
 	if err := pages.EditarConsumos(datos).Render(r.Context(), w); err != nil {
@@ -164,6 +178,12 @@ func (m *Controlador) GuardarConsumosDia(w http.ResponseWriter, r *http.Request)
 
 	grado := r.FormValue("grado")
 
+	sector := r.FormValue("sector")
+	if sector != "" && sector != "menor" && sector != "mayor" {
+		http.Error(w, "Sector inválido: debe ser 'menor' o 'mayor'", http.StatusBadRequest)
+		return
+	}
+
 	productos, err := m.servicio.Repo.ObtenerProductosActivos()
 	if err != nil {
 		http.Error(w, "Error al obtener productos", http.StatusInternalServerError)
@@ -181,9 +201,14 @@ func (m *Controlador) GuardarConsumosDia(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	urlRedireccion := "/?fecha=" + fechaStr
-	if grado != "" {
-		urlRedireccion += "&grado=" + grado
+	var urlRedireccion string
+	if sector != "" {
+		urlRedireccion = "/registro/" + sector + "?fecha=" + fechaStr
+	} else {
+		urlRedireccion = "/?fecha=" + fechaStr
+		if grado != "" {
+			urlRedireccion += "&grado=" + grado
+		}
 	}
 	http.Redirect(w, r, urlRedireccion, http.StatusSeeOther)
 }

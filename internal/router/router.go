@@ -17,21 +17,21 @@ func ConfigurarRutas(controlador *controllers.Controlador) *http.ServeMux {
 	// Rutas públicas
 	mux.HandleFunc("GET /login", controlador.MostrarLogin)
 	mux.HandleFunc("POST /login", controlador.ProcesarLogin)
-	mux.HandleFunc("/logout", controlador.Logout)
+	mux.HandleFunc("GET /logout", controlador.Logout)
 
 	// Atajos para proteger HandlerFunc
 	p := middleware.Proteger             // Solo requiere autenticación
 	pe := middleware.ProtegerEdicion     // Requiere autenticación + puede_editar = 1
 
 	// Rutas que requieren edición (puede_editar = 1)
-	mux.HandleFunc("/", pe(controlador.Inicio))
-	mux.HandleFunc("/editar-consumos", pe(controlador.EditarConsumos))
-	mux.HandleFunc("/guardar-consumos-dia", pe(controlador.GuardarConsumosDia))
-	mux.HandleFunc("/registrar-consumo", pe(controlador.RegistrarConsumo))
-	mux.HandleFunc("/editar-pagos", pe(controlador.EditarPagos))
-	mux.HandleFunc("/registrar-pago", pe(controlador.RegistrarPago))
-	mux.HandleFunc("/eliminar-pago", pe(controlador.EliminarPago))
-	mux.HandleFunc("/ver-consumo-semanal", pe(controlador.VerConsumoSemanal))
+	mux.HandleFunc("GET /", pe(controlador.Inicio))
+	mux.HandleFunc("GET /editar-consumos", pe(controlador.EditarConsumos))
+	mux.HandleFunc("POST /guardar-consumos-dia", pe(controlador.GuardarConsumosDia))
+	mux.HandleFunc("POST /registrar-consumo", pe(controlador.RegistrarConsumo))
+	mux.HandleFunc("GET /editar-pagos", pe(controlador.EditarPagos))
+	mux.HandleFunc("POST /registrar-pago", pe(controlador.RegistrarPago))
+	mux.HandleFunc("POST /eliminar-pago", pe(controlador.EliminarPago))
+	mux.HandleFunc("GET /ver-consumo-semanal", pe(controlador.VerConsumoSemanal))
 
 	// Configuración de estudiantes — requiere edición
 	mux.HandleFunc("GET /setup", pe(controlador.SetupEstudiantes))
@@ -46,10 +46,13 @@ func ConfigurarRutas(controlador *controllers.Controlador) *http.ServeMux {
 	mux.HandleFunc("POST /setup/producto/actualizar", p(controlador.ActualizarProducto))
 	mux.HandleFunc("POST /setup/producto/toggle", p(controlador.ToggleProducto))
 
-	// Registro de consumos por sector — accesible a todos (solo lectura y envío de datos)
+	// Registro de consumos por sector — accesible a todos
 	mux.HandleFunc("GET /registro", p(controlador.RegistroConsumos))
-	mux.HandleFunc("GET /registro/estudiantes", p(controlador.ObtenerEstudiantesSector))
-	mux.HandleFunc("POST /registro/guardar", p(controlador.GuardarRegistroBatch))
+	mux.HandleFunc("GET /registro/menor", p(controlador.RegistroSector))
+	mux.HandleFunc("GET /registro/mayor", p(controlador.RegistroSector))
+
+	// API endpoints para app mobile
+	mux.HandleFunc("GET /api/database/download", p(controlador.DescargarBD))
 
 	return mux
 }

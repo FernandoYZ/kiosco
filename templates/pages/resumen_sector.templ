@@ -1,0 +1,130 @@
+package pages
+
+import (
+	"fmt"
+	"kiosco/internal/models"
+	"kiosco/templates/layouts"
+)
+
+// ResumenSector — página de resumen diario de consumos por sector
+templ ResumenSector(datos models.DatosResumenSector) {
+	@layouts.Layout("Resumen del Día") {
+		<div id="resumen-main" class="bg-[#F2F2F7] min-h-screen text-[#000000]">
+			<!-- Navbar -->
+			<nav class="sticky top-0 z-20 bg-white/20 backdrop-blur-xl border-b border-gray-200/70 px-4 py-3">
+				<div class="max-w-2xl lg:max-w-6xl mx-auto flex items-center justify-between">
+					<a
+						href={ templ.URL("/registro/" + datos.Sector + "?fecha=" + datos.Fecha) }
+						class="flex items-center text-[#007AFF] active:opacity-50 transition-opacity"
+					>
+						<svg class="w-6 h-6 -ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path>
+						</svg>
+						<span class="text-[17px] font-medium">Atrás</span>
+					</a>
+					<h2 class="text-[17px] font-semibold">
+						if datos.Sector == "menor" {
+							Sector Menor
+						} else {
+							Sector Mayor
+						}
+					</h2>
+					if datos.TotalItems > 0 {
+						<span class="text-[13px] font-bold bg-[#34C759] text-white px-2.5 py-1 rounded-full">
+							{ fmt.Sprintf("%d", datos.TotalItems) }
+						</span>
+					} else {
+						<span class="text-[13px] font-bold bg-[#8E8E93] text-white px-2.5 py-1 rounded-full">
+							0
+						</span>
+					}
+				</div>
+			</nav>
+
+			<!-- Selector de Fecha -->
+			<div class="px-3 sm:px-4 py-2 sm:py-3">
+				<div class="max-w-2xl lg:max-w-6xl mx-auto">
+					<select
+						id="selector-fecha"
+						class="w-full border border-gray-300 rounded-2xl px-4 py-2.5 text-[15px] sm:text-[17px] font-medium text-gray-900 focus:border-[#007AFF] focus:ring-2 focus:ring-blue-100 transition-all appearance-none cursor-pointer"
+						style="background-image: url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 fill=%27none%27 viewBox=%270 0 20 20%27%3E%3Cpath stroke=%27%23666%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27 stroke-width=%271.5%27 d=%27M6 8l4 4 4-4%27/%3E%3C/svg%3E'); background-position: right 0.75rem center; background-repeat: no-repeat; background-size: 1.25em 1.25em; padding-right: 2.5rem;"
+					>
+						for _, dia := range datos.Fechas {
+							<option value={ dia.Fecha } selected?={ dia.Fecha == datos.Fecha }>
+								{ dia.Nombre } - { dia.FechaFormato }
+							</option>
+						}
+					</select>
+				</div>
+			</div>
+
+			<!-- Header -->
+			<div class="max-w-2xl lg:max-w-6xl mx-auto px-3 sm:px-4 pt-2 sm:pt-3 mb-3 sm:mb-4">
+				<h1 class="text-2xl sm:text-3xl lg:text-[34px] font-bold tracking-tight text-gray-900 leading-tight">Resumen del Día</h1>
+				if len(datos.Resumenes) > 0 {
+					<p class="text-[15px] sm:text-[17px] text-[#8E8E93] font-medium mt-0.5 sm:mt-1">
+						{ fmt.Sprintf("%d", len(datos.Resumenes)) } estudiante(s) con consumo
+					</p>
+				} else {
+					<p class="text-[15px] sm:text-[17px] text-[#8E8E93] font-medium mt-0.5 sm:mt-1">Sin consumos registrados</p>
+				}
+			</div>
+
+			<!-- Contenido -->
+			<div id="resumenes-container" class="max-w-2xl lg:max-w-6xl mx-auto px-3 sm:px-4 pb-10">
+				if len(datos.Resumenes) == 0 {
+					<!-- Estado vacío -->
+					<div class="bg-white rounded-2xl sm:rounded-[28px] p-8 sm:p-12 text-center border border-gray-200">
+						<div class="bg-[#F2F2F7] w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+							<svg class="w-10 h-10 text-[#AEAEB2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+							</svg>
+						</div>
+						<h3 class="text-[17px] sm:text-[19px] font-bold text-gray-900">Sin consumos</h3>
+						<p class="text-[13px] sm:text-[15px] text-[#8E8E93] mt-1 sm:mt-2 max-w-xs mx-auto">No hay consumos registrados para este sector en la fecha seleccionada.</p>
+					</div>
+				} else {
+					<div class="space-y-2 sm:space-y-3">
+						for _, res := range datos.Resumenes {
+							<div class="bg-white rounded-2xl sm:rounded-[28px] overflow-hidden border border-gray-200">
+								<!-- Cabecera del estudiante -->
+								<div class="flex items-center gap-4 px-4 py-3 sm:py-3 border-b border-gray-100">
+									<div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-base sm:text-lg flex-shrink-0">
+										{ res.Apellidos[0:1] }
+									</div>
+									<div class="min-w-0 flex-1">
+										<p class="text-[15px] sm:text-[17px] font-bold text-gray-900 leading-tight truncate">
+											{ res.Apellidos }, { res.Nombres }
+										</p>
+										<p class="text-[13px] sm:text-[15px] font-medium text-[#8E8E93]">
+											{ res.NombreGrado }
+										</p>
+									</div>
+									<span class="text-[11px] sm:text-[13px] font-semibold text-[#007AFF] bg-blue-50 px-2 py-0.5 rounded-full flex-shrink-0">
+										{ fmt.Sprintf("%d", len(res.Items)) } ítem(s)
+									</span>
+								</div>
+								<!-- Lista de ítems -->
+								<div class="flex flex-wrap gap-2 px-4 pb-4">
+                                    for _, item := range res.Items {
+                                        <span class="inline-flex items-center bg-[#F2F2F7] px-3 py-1.5 rounded-xl text-[13px] font-medium text-gray-800 border border-gray-100">
+                                            { item.NombreProducto }
+                                            if item.Cantidad > 1 {
+                                                <span class="ml-1 text-[#007AFF] font-bold">×{ fmt.Sprintf("%d", item.Cantidad) }</span>
+                                            }
+                                        </span>
+                                    }
+                                </div>
+							</div>
+						}
+					</div>
+				}
+			</div>
+		</div>
+
+		<style>
+			.no-scrollbar::-webkit-scrollbar { display: none; }
+			.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+		</style>
+	}
+}

@@ -1,0 +1,77 @@
+package pages
+
+import (
+	"kiosco/templates/components"
+)
+
+// Partial: selector de sectores para el registro de consumos
+templ RegistroSectores() {
+	<!-- Vista: Selección de Sector -->
+	<div class="pb-10 min-h-screen bg-[#F2F2F7]">
+		<nav class="sticky top-0 z-30 bg-white/20 backdrop-blur-2xl border-b border-gray-200/70 px-6 py-3">
+			<div class="max-w-5xl mx-auto flex items-center justify-between">
+				<div class="flex items-center gap-2">
+					<span class="text-[15px] font-bold text-gray-900 tracking-tight">Kiosco <span class="text-blue-600">del Valle</span></span>
+				</div>
+				<a href="/logout" class="flex items-center text-[#007AFF] font-medium text-[15px] active:opacity-50 transition-opacity">
+					<span>Cerrar Sesión</span>
+					@components.IconLogout("w-5 h-5 ml-2")
+				</a>
+			</div>
+		</nav>
+
+		<div class="max-w-5xl mx-auto px-6 pt-12">
+			<header class="mb-12">
+				<h1 class="text-[34px] font-extrabold tracking-tight text-gray-900 leading-tight">Registro de Consumos</h1>
+				<p class="text-[19px] text-[#8E8E93] font-medium mt-2">Selecciona el área de trabajo para hoy</p>
+			</header>
+
+			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+				<a
+					href="/registro/menor"
+					class="group bg-white rounded-[24px] p-8 border border-gray-200/60 shadow-sm active:scale-95 transition-all duration-200 text-left flex flex-col justify-between h-64"
+				>
+					<div class="flex justify-between items-start">
+						<div class="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center group-active:bg-indigo-600 group-active:text-white transition-colors">
+							@components.IconStudents("w-8 h-8")
+						</div>
+					</div>
+					<div>
+						<h2 class="text-[22px] font-extrabold text-gray-900 leading-tight">Sector Menor</h2>
+						<p class="text-[15px] text-[#8E8E93] font-semibold mt-2">Primaria y Bajos<br/>Secundaria</p>
+					</div>
+					<span class="text-sm font-semibold text-[#007AFF]">Seleccionar →</span>
+				</a>
+
+				<a
+					href="/registro/mayor"
+					class="group bg-white rounded-[24px] p-8 border border-gray-200/60 shadow-sm active:scale-95 transition-all duration-200 text-left flex flex-col justify-between h-64"
+				>
+					<div class="flex justify-between items-start">
+						<div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center group-active:bg-blue-600 group-active:text-white transition-colors">
+							@components.IconStudents("w-8 h-8")
+						</div>
+					</div>
+					<div>
+						<h2 class="text-[22px] font-extrabold text-gray-900 leading-tight">Sector Mayor</h2>
+						<p class="text-[15px] text-[#8E8E93] font-semibold mt-2">3ro a 5to de<br/>Secundaria</p>
+					</div>
+					<span class="text-sm font-semibold text-[#007AFF]">Seleccionar →</span>
+				</a>
+
+				<a
+					href="/setup/productos"
+					class="group bg-white rounded-[24px] p-8 border border-gray-200/60 shadow-sm active:scale-95 transition-all duration-200 text-left flex flex-col justify-between h-64"
+				>
+					<div class="w-14 h-14 bg-orange-50 text-orange-600 rounded-2xl flex items-center justify-center group-active:bg-orange-600 group-active:text-white transition-colors">
+						@components.IconProducts("w-8 h-8")
+					</div>
+					<div>
+						<h2 class="text-[22px] font-extrabold text-gray-900 leading-tight">Productos</h2>
+						<p class="text-[15px] text-[#8E8E93] font-semibold mt-2">Configurar precios<br/>y existencias</p>
+					</div>
+				</a>
+			</div>
+		</div>
+	</div>
+}

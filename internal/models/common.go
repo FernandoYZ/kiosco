@@ -31,6 +31,8 @@ type DatosEditarConsumos struct {
 	Productos         []Producto
 	Consumos          map[int]map[string]map[int]int
 	GradoSeleccionado int
+	Sector            string // "menor" | "mayor" | "" (empty = entrada desde grilla semanal)
+	PuedeEditar       bool   // Permisos del usuario autenticado
 }
 
 // DatosEditarPagos contiene los datos para editar pagos de una semana
@@ -57,4 +59,12 @@ type DatosConsumoSemanal struct {
 	Pagos             float64
 	Total             float64
 	GradoSeleccionado int
+}
+
+// DiaFecha representa un día de la semana con su fecha formateada
+type DiaFecha struct {
+	Nombre       string // "Lunes"
+	Fecha        string // "2025-04-14" (para el value del select)
+	FechaFormato string // "14 Abr"     (para mostrar al usuario)
+	EsHoy        bool
 }

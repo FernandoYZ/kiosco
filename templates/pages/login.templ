@@ -1,6 +1,10 @@
 package pages
 
-import "kiosco/templates/layouts"
+import (
+	"kiosco/internal/middleware"
+	"kiosco/templates/components"
+	"kiosco/templates/layouts"
+)
 
 templ Login(errorMsg string) {
     @layouts.Layout("Iniciar Sesión") {
@@ -27,8 +31,9 @@ templ Login(errorMsg string) {
                 }
 
                 <form method="POST" action="/login" class="space-y-6">
+                    @components.CSRFTokenField(ctx.Value(middleware.CSRFTokenContextKey).(string))
                     <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm divide-y divide-gray-100">
-                        <div class="flex items-center px-4 py-4">
+                        <div class="flex items-center px-4 py-4 gap-4">
                             <label for="usuario" class="w-24 text-[17px] text-gray-500 font-medium">Usuario</label>
                             <input
                                 type="text"
@@ -41,8 +46,8 @@ templ Login(errorMsg string) {
                                 class="flex-1 bg-transparent border-none focus:ring-0 text-[17px] p-0 text-gray-900 placeholder-gray-300"
                             />
                         </div>
-                        
-                        <div class="flex items-center px-4 py-4">
+
+                        <div class="flex items-center px-4 py-4 gap-4">
                             <label for="password" class="w-24 text-[17px] text-gray-500 font-medium">Clave</label>
                             <input
                                 type="password"

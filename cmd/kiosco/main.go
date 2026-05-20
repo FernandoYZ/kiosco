@@ -8,6 +8,7 @@ import (
 	"kiosco/internal/router"
 	"log"
 	"net/http"
+	"time"
 )
 
 func main() {
@@ -33,7 +34,14 @@ func main() {
 	fmt.Println("✓ Presiona Ctrl+C para detener el servidor")
 	fmt.Println()
 
-	if err := http.ListenAndServe(direccionServidor, mux); err != nil {
+	server := &http.Server{
+		Addr:         direccionServidor,
+		Handler:      mux,
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	}
+	if err := server.ListenAndServe(); err != nil {
 		log.Fatalf("❌ Error al iniciar servidor: %v", err)
 	}
 }

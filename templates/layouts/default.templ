@@ -34,11 +34,11 @@ templ Layout(titulo string) {
 				<!-- HTMX para interactividad -->
 				<script src="/dist/htmx.min.js"></script>
 				<script>
-					// Configurar HTMX para enviar token CSRF automáticamente en POSTs
+					// Configurar HTMX para enviar token CSRF como header en todas las solicitudes
 					document.addEventListener('htmx:configRequest', function(evt) {
 						var token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-						if (token) {
-							evt.detail.parameters['csrf_token'] = token;
+						if (token && evt.detail.xhr) {
+							evt.detail.xhr.setRequestHeader('X-CSRF-Token', token);
 						}
 					});
 				</script>

@@ -1,0 +1,147 @@
+package pages
+
+import (
+	"fmt"
+	"kiosco/internal/models"
+)
+
+// Grid de registro — lista de estudiantes como enlaces SSR
+templ RegistroGrid(sector string, fechas []models.DiaFecha, fechaActual string, estudiantes []models.Estudiante, productos []models.Producto) {
+	<div class="pb-6">
+		<!-- Navbar -->
+		<nav class="sticky top-0 z-20 bg-white/20 backdrop-blur-xl border-b border-gray-200/70 px-4 py-3">
+			<div class="max-w-2xl lg:max-w-6xl mx-auto flex items-center justify-between">
+				<a href="/registro" class="flex items-center text-[#007AFF] active:opacity-50 transition-opacity">
+					<svg class="w-6 h-6 -ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path>
+					</svg>
+					<span class="text-[17px] font-medium">Atrás</span>
+				</a>
+				<h2 class="text-[17px] font-semibold">
+					if sector == "menor" {
+						Sector Menor
+					} else {
+						Sector Mayor
+					}
+				</h2>
+				<a
+					href={ templ.URL("/resumen/" + sector + "?fecha=" + fechaActual) }
+					class="text-[15px] font-medium text-[#007AFF] active:opacity-50 transition-opacity"
+				>
+					Resumen
+				</a>
+			</div>
+		</nav>
+
+		<!-- Selector de Fecha -->
+		<div class="px-3 sm:px-4 py-3 sm:py-4">
+			<div class="max-w-2xl lg:max-w-6xl mx-auto">
+				<select
+					id="selector-fecha"
+					class="w-full border border-gray-300 rounded-2xl px-4 py-3 text-[15px] sm:text-[17px] font-medium text-gray-900 focus:border-[#007AFF] focus:ring-2 focus:ring-blue-100 transition-all appearance-none cursor-pointer"
+					style="background-image: url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 fill=%27none%27 viewBox=%270 0 20 20%27%3E%3Cpath stroke=%27%23666%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27 stroke-width=%271.5%27 d=%27M6 8l4 4 4-4%27/%3E%3C/svg%3E'); background-position: right 0.75rem center; background-repeat: no-repeat; background-size: 1.25em 1.25em; padding-right: 2.5rem;"
+				>
+					for _, dia := range fechas {
+						<option value={ dia.Fecha } selected?={ dia.Fecha == fechaActual }>
+							{ dia.Nombre } - { dia.FechaFormato }
+						</option>
+					}
+				</select>
+			</div>
+		</div>
+
+		<!-- Header -->
+		<div class="max-w-2xl lg:max-w-6xl mx-auto px-3 sm:px-4 pt-4 sm:pt-6 mb-4 sm:mb-6">
+			<h1 class="text-2xl sm:text-3xl lg:text-[34px] font-bold tracking-tight text-gray-900 leading-tight">Consumo</h1>
+			<p class="text-[15px] sm:text-[17px] text-[#8E8E93] font-medium mt-1 sm:mt-2">Selecciona un estudiante para registrar</p>
+		</div>
+
+		<!-- Layout 2 Columnas -->
+		<div class="max-w-2xl lg:max-w-6xl mx-auto px-3 sm:px-4">
+			<div class="md:grid md:grid-cols-12 md:gap-6 lg:gap-8 items-start">
+				<!-- Panel Izquierdo: Búsqueda y Filtros -->
+				<aside class="md:col-span-5 lg:col-span-4 mb-6 md:mb-0">
+					<h3 class="px-3 sm:px-4 mb-3 text-[12px] sm:text-[13px] font-bold text-[#8E8E93] uppercase tracking-wide">BÚSQUEDA</h3>
+					<div class="bg-white rounded-2xl sm:rounded-[28px] md:rounded-[32px] overflow-hidden shadow-sm border border-gray-200">
+						<div class="divide-y divide-gray-100">
+							<div class="flex items-center px-4 py-4 gap-3">
+								<svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+								</svg>
+								<input
+									type="text"
+									id="search-input"
+									placeholder="Nombre..."
+									class="flex-1 bg-transparent border-none text-[15px] sm:text-[17px] placeholder-gray-400 focus:ring-0"
+								/>
+							</div>
+							<div class="p-3 sm:p-4 bg-gray-50/50">
+								<div class="flex gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar pb-1">
+									<button type="button" data-grado="Todos" class="grado-btn px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[13px] sm:text-[14px] font-semibold transition-all whitespace-nowrap shadow-sm border bg-[#007AFF] border-[#007AFF] text-white active:scale-95">
+										Todos
+									</button>
+								</div>
+							</div>
+						</div>
+					</div>
+				</aside>
+
+				<!-- Panel Derecho: Listado de Estudiantes -->
+				<main class="md:col-span-7 lg:col-span-8">
+					<div class="flex items-center justify-between px-3 sm:px-4 mb-3">
+						<h3 class="text-[12px] sm:text-[13px] font-bold text-[#8E8E93] uppercase tracking-wide">LISTADO</h3>
+						<span id="contador" class="text-[11px] sm:text-[13px] font-semibold text-[#007AFF] bg-blue-50 px-2 py-0.5 rounded-full">
+							encontrados: { fmt.Sprintf("%d", len(estudiantes)) }
+						</span>
+					</div>
+
+					<div id="estudiantes-container" class="bg-white rounded-2xl sm:rounded-[28px] md:rounded-[32px] overflow-hidden shadow-sm border border-gray-200">
+						<div class="divide-y divide-gray-100">
+							for _, est := range estudiantes {
+								<a
+									href={ templ.URL("/editar-consumos?id_estudiante=" + fmt.Sprintf("%d", est.IdEstudiante) + "&fecha=" + fechaActual + "&sector=" + sector) }
+									class="estudiante-fila flex items-center justify-between p-3 sm:p-4 hover:bg-gray-50 active:bg-gray-100 transition-colors cursor-pointer select-none"
+								>
+									<div class="flex items-center gap-4 min-w-0">
+										<div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-base sm:text-lg flex-shrink-0">
+											{ est.Apellidos[0:1] }
+										</div>
+										<div class="truncate">
+											<p class="text-[15px] sm:text-[17px] font-bold text-gray-900 leading-tight truncate">
+												{ est.Apellidos }, { est.Nombres }
+											</p>
+											<p class="text-[13px] sm:text-[15px] font-medium text-[#8E8E93]">
+												{ est.NombreGrado }
+											</p>
+										</div>
+									</div>
+									<svg class="w-5 h-5 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path>
+									</svg>
+								</a>
+							}
+
+							if len(estudiantes) == 0 {
+								<div class="text-center py-12 sm:py-20 px-4 sm:px-6">
+									<div class="bg-[#F2F2F7] w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+										<svg class="w-10 h-10 text-[#AEAEB2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+										</svg>
+									</div>
+									<h3 class="text-[17px] sm:text-[19px] font-bold text-gray-900">Sin resultados</h3>
+									<p class="text-[13px] sm:text-[15px] text-[#8E8E93] mt-1 sm:mt-2 max-w-xs sm:max-w-[240px] mx-auto">No encontramos estudiantes con esos criterios.</p>
+								</div>
+							}
+						</div>
+					</div>
+				</main>
+			</div>
+		</div>
+	</div>
+
+
+	<style>
+		.no-scrollbar::-webkit-scrollbar { display: none; }
+		.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+	</style>
+}

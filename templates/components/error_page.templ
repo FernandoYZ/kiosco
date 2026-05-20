@@ -1,0 +1,50 @@
+package components
+
+import "kiosco/templates/layouts"
+
+templ ErrorPage(titulo string, mensaje string, botones ...templ.Component) {
+	@layouts.Layout(titulo) {
+		<div class="min-h-screen flex flex-col bg-[#F2F2F7] px-6 pt-20 sm:pt-0 sm:items-center sm:justify-center">
+			<div class="w-full max-w-[360px] mx-auto">
+				<div class="flex flex-col items-center mb-10">
+					<div class="w-20 h-20 bg-red-50 rounded-[22%] flex items-center justify-center mb-6 shadow-xl shadow-red-100">
+						<svg class="w-10 h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 9v2m0 4v2m0-12a9 9 0 110 18 9 9 0 010-18z"></path>
+						</svg>
+					</div>
+					<h1 class="text-[28px] font-extrabold text-gray-900 tracking-tight leading-tight">{ titulo }</h1>
+				</div>
+
+				<div class="mb-8 p-4 bg-white/50 border border-red-200 rounded-2xl">
+					<p class="text-[15px] text-red-600 font-semibold leading-relaxed">{ mensaje }</p>
+				</div>
+
+				<div class="space-y-3">
+					for _, boton := range botones {
+						@boton
+					}
+				</div>
+
+				<div class="mt-10 text-center">
+					<p class="text-[13px] text-[#8E8E93] font-medium leading-relaxed">
+						Sistema de Gestión Interna<br/>
+						Kiosco Pro v2.0
+					</p>
+				</div>
+			</div>
+		</div>
+	}
+}
+
+templ BotonError(texto string, href string, es_primario bool) {
+	<a
+		href={ templ.SafeURL(href) }
+		class={
+			"w-full py-4 font-bold rounded-2xl text-[17px] transition-all duration-200 text-center block",
+			templ.KV("bg-[#007AFF] hover:bg-blue-600 active:scale-[0.98] text-white shadow-lg shadow-blue-100", es_primario),
+			templ.KV("bg-gray-100 hover:bg-gray-200 active:scale-[0.98] text-gray-900", !es_primario),
+		}
+	>
+		{ texto }
+	</a>
+}

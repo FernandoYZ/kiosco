@@ -50,26 +50,40 @@ templ FilaEstudiante(est models.Estudiante, grados []models.InfoGrado) {
 					Editar
 				</button>
 				if est.EstaActivo {
-					<button
+					<form
 						hx-post="/setup/estudiante/toggle"
 						hx-target={ "#est-" + fmt.Sprintf("%d", est.IdEstudiante) }
 						hx-swap="outerHTML"
-						hx-vals={ fmt.Sprintf(`{"id_estudiante":"%d","esta_activo":"0"}`, est.IdEstudiante) }
 						hx-confirm={ "¿Desactivar a " + est.Nombres + "?" }
-						class="text-[#FF3B30] text-[15px] font-medium px-3 py-1 hover:bg-red-50 rounded-lg transition-colors active:scale-95"
+						style="display: inline;"
 					>
-						Bajar
-					</button>
+						@components.CSRFTokenField(ctx.Value(middleware.CSRFTokenContextKey).(string))
+						<input type="hidden" name="id_estudiante" value={ fmt.Sprintf("%d", est.IdEstudiante) }/>
+						<input type="hidden" name="esta_activo" value="0"/>
+						<button
+							type="submit"
+							class="text-[#FF3B30] text-[15px] font-medium px-3 py-1 hover:bg-red-50 rounded-lg transition-colors active:scale-95"
+						>
+							Bajar
+						</button>
+					</form>
 				} else {
-					<button
+					<form
 						hx-post="/setup/estudiante/toggle"
 						hx-target={ "#est-" + fmt.Sprintf("%d", est.IdEstudiante) }
 						hx-swap="outerHTML"
-						hx-vals={ fmt.Sprintf(`{"id_estudiante":"%d","esta_activo":"1"}`, est.IdEstudiante) }
-						class="text-[#34C759] text-[15px] font-medium px-3 py-1 hover:bg-green-50 rounded-lg transition-colors active:scale-95"
+						style="display: inline;"
 					>
-						Activar
-					</button>
+						@components.CSRFTokenField(ctx.Value(middleware.CSRFTokenContextKey).(string))
+						<input type="hidden" name="id_estudiante" value={ fmt.Sprintf("%d", est.IdEstudiante) }/>
+						<input type="hidden" name="esta_activo" value="1"/>
+						<button
+							type="submit"
+							class="text-[#34C759] text-[15px] font-medium px-3 py-1 hover:bg-green-50 rounded-lg transition-colors active:scale-95"
+						>
+							Activar
+						</button>
+					</form>
 				}
 			</div>
 		</div>
