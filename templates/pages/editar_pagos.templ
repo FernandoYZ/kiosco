@@ -145,6 +145,7 @@ templ EditarPagos(datos models.DatosEditarPagos) {
                                             hx-post="/eliminar-pago"
                                             hx-target={ "#pago-" + fmt.Sprintf("%d", pago.IdPago) }
                                             hx-swap="outerHTML"
+                                            hx-confirm={ "¿Estás seguro de eliminar este pago?" }
                                             style="display: inline;"
                                         >
                                             @components.CSRFTokenField(ctx.Value(middleware.CSRFTokenContextKey).(string))
@@ -154,7 +155,6 @@ templ EditarPagos(datos models.DatosEditarPagos) {
                                             <input type="hidden" name="grado" value={ fmt.Sprintf("%d", datos.GradoSeleccionado) }/>
                                             <button
                                                 type="submit"
-                                                onclick={ `return confirm('¿Estás seguro de eliminar este pago?')` }
                                                 class="text-[#FF3B30] text-[15px] font-semibold hover:text-red-700 transition-colors px-3 py-2 -mr-2 border-none bg-none cursor-pointer"
                                             >
                                                 Eliminar
