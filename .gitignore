@@ -6,6 +6,8 @@
 *.dylib
 *.db
 
+bin/
+
 # kiosco
 kiosco.exe
 
@@ -52,7 +54,16 @@ Thumbs.db
 env.bat
 
 # Archivos generados por el proyecto
-
 *_templ.go
 release/
 database/
+
+# Binarios del proyecto
+kiosco
+
+# Archivos temporales y de prueba
+prueba.html
+errores_terminal.txt
+
+# Archivos de configuración sensible (credenciales)
+credenciales.txt
