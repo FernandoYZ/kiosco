@@ -68,10 +68,10 @@ Para probar el sistema sin configuración previa, utiliza:
 | Base de datos | SQLite (`modernc.org/sqlite` — pure Go, sin CGO) |
 | Templates | `a-h/templ` — templates compilados a Go |
 | Autenticación | `golang.org/x/crypto` — Argon2id |
-| CSS | TailwindCSS v4 CLI |
-| JS interactividad | Alpine.js 3.x, HTMX 2.x |
+| CSS | TailwindCSS v4 CLI (binario standalone) |
+| JS interactividad | Alpine.js 3.x, HTMX 2.x (CDN) |
 | Exportación | html-to-image |
-| Build frontend | Bun |
+| Build frontend | Makefile + curl (sin Node.js) |
 
 ---
 ## Inicio rápido
@@ -79,37 +79,31 @@ Para probar el sistema sin configuración previa, utiliza:
 ### Prerrequisitos
 
 - [Go 1.25+](https://go.dev/dl/)
-- [Bun](https://bun.sh/) — para compilar assets frontend
 - [templ CLI](https://templ.guide/quick-start/installation) — para generar templates Go
+- `curl` — para descargar TailwindCSS CLI
 
 ### Desarrollo local
 
 ```bash
-# 1. Instalar dependencias frontend
-bun install
+# 1. Descargar dependencias (TailwindCSS, Alpine.js, HTMX, etc)
+make setup
 
-# 2. Compilar assets estáticos
-bun run start:static
-
-# 3. Generar templates Go
-templ generate
-
-# 4. Ejecutar la aplicación
-go run ./cmd/kiosco
+# 2. Iniciar con hot reload
+make dev
 ```
 
 Acceder en: **http://localhost:3200**
 
-> [!IMPORTANT]
-> Debes ejecutar `templ generate` antes de iniciar la aplicación o las vistas no estarán disponibles.
-
-Para desarrollar estilos con recarga automática:
+### Comandos útiles
 
 ```bash
-bun run css:dev   # watch mode — observa cambios en assets/main.css
+make build          # Compilar para producción
+make build-linux    # Compilar para VPS (Linux amd64)
+make test           # Ejecutar tests
+make fmt            # Formatear código
+make clean          # Limpiar artifacts
+make help           # Ver todos los comandos
 ```
-> [!TIP]
-> Usa modo watch para recompilar automáticamente los estilos al guardar cambios.
 
 Variables de entorno opcionales
 
@@ -126,9 +120,9 @@ Variables de entorno opcionales
 Los assets de entrada están en `assets/`:
 
 - **`assets/main.css`** — punto de entrada de TailwindCSS. Agregar aquí estilos personalizados o directivas `@layer`.
-- **`assets/main.js`** — punto de entrada de Bun. Agregar aquí código JavaScript propio.
+- **`assets/main.js`** — código JavaScript propio (se copia a `public/dist/`).
 
-Al ejecutar `bun run start:static`, estos archivos se compilan y minimizan en `public/dist/`. Los archivos en `public/` se embeben en el binario al compilar con `go build`.
+Al ejecutar `make assets`, estos archivos se compilan (CSS con TailwindCSS) y se descargan las librerías JS (Alpine.js, HTMX) en `public/dist/`. Los archivos en `public/` se embeben en el binario al compilar con `go build`.
 
 ---
 ## Seguridad
@@ -150,9 +144,10 @@ Todos los formularios POST están protegidos contra ataques CSRF:
 - **Graceful degradation:** previene sobrecarga en SQLite
 
 ### WAL Mode (Write-Ahead Logging)
-- Base de datos SQLite optimizada para concurrencia
-- Mejora performance en multi-usuario
-- Requiere migración: ver `SETUP_WAL_PRODUCCION.md`
+- Base de datos SQLite optimizada para concurrencia: múltiples lectores pueden leer **mientras** alguien escribe
+- Mejora performance en multi-usuario: +3x mejor bajo concurrencia
+- **Activado automáticamente** por el servidor en startup (ver `internal/config/database.go`)
+- Si ves "database is locked" en logs, ejecuta: `make db-verify`
 
 ---
 ## Rutas de la aplicación
