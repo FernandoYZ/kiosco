@@ -17,9 +17,9 @@ import (
 const (
 	CookieNombre  = "kiosco_session"
 	tiempoExpiry  = 24 * time.Hour
-	argonMemory   = 64 * 1024 // 64 MB
-	argonIter     = 1
-	argonThreads  = 4
+	argonMemory   = 16      // 16 KB, coincide con parámetros en BD
+	argonIter     = 3       // coincide con parámetros en BD
+	argonThreads  = 1       // coincide con parámetros en BD
 	argonKeyLen   = 32
 	argonSaltLen  = 16
 )

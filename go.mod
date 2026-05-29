@@ -3,7 +3,7 @@ module kiosco
 go 1.25.5
 
 require (
-	github.com/a-h/templ v0.3.1001
+	github.com/a-h/templ v0.3.1020
 	golang.org/x/crypto v0.49.0
 	modernc.org/sqlite v1.46.1
 )

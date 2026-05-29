@@ -85,8 +85,8 @@ INSERT INTO productos (nombre, precio_unitario) VALUES
 ('Comida 2', 3.00);
 
 -- Agregar usuario de prueba
-INSERT INTO usuarios (usuario, contrasenha) VALUES
-('prueba', '$argon2id$v=19$m=16,t=3,p=1$bG1tMWowTEZMVTVSVU5VYg$9Ib8jWAgKLD1PSaZoIdBBA');
+INSERT INTO usuarios (usuario, contrasenha, puede_editar) VALUES
+('prueba', '$argon2id$v=19$m=16,t=3,p=1$bG1tMWowTEZMVTVSVU5VYg$9Ib8jWAgKLD1PSaZoIdBBA', 1);
 -- contraseña: pa$$w0rD
 
 -- database: ..\database\database.db 
