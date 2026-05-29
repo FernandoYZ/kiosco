@@ -1,8 +1,15 @@
 package components
 
 templ BottomNav() {
-    <nav 
-        id="bottomNav" 
+    <nav
+        x-data="{ visible: true, last: 0 }"
+        :style="visible ? '' : 'transform: translateY(calc(100% + 40px))'"
+        @scroll.window.throttle.100ms="
+            let cur = window.pageYOffset;
+            if (cur > last && cur > 50) visible = false;
+            else if (cur < last) visible = true;
+            last = cur <= 0 ? 0 : cur;
+        "
         class="sm:hidden fixed bottom-6 left-6 right-6 z-50 bg-white/80 backdrop-blur-2xl rounded-[28px] shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-white/20 transition-transform duration-300 ease-in-out safe-area-inset-bottom"
     >
         <div class="flex items-center justify-around h-20 px-2">

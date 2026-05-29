@@ -83,41 +83,6 @@ window.copiarComprobante = async function copiarComprobante(idElemento, nombreAr
 }
 
 // ---------------------------------------------------------------------------
-// Control de BottomNav: Mostrar solo en páginas autenticadas
-// ---------------------------------------------------------------------------
-document.addEventListener('DOMContentLoaded', () => {
-  const bottomNav = document.getElementById('bottomNav');
-  if (!bottomNav) return;
-
-  // Esconder el bottom nav en páginas públicas como /login
-  if (window.location.pathname === '/login') {
-    bottomNav.style.display = 'none';
-  }
-
-  // Hide-on-Scroll: Esconde el Bottom Nav al hacer scroll hacia abajo
-  let lastScrollTop = 0;
-  const scrollThreshold = 50; // Píxeles de scroll antes de reaccionar
-
-  window.addEventListener('scroll', () => {
-    // Si está escondido, no hacer nada
-    if (bottomNav.style.display === 'none') return;
-
-    const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
-
-    // Scroll hacia abajo: esconde
-    if (currentScroll > lastScrollTop && currentScroll > scrollThreshold) {
-      bottomNav.style.transform = 'translateY(100%)';
-    }
-    // Scroll hacia arriba: muestra
-    else if (currentScroll < lastScrollTop) {
-      bottomNav.style.transform = 'translateY(0)';
-    }
-
-    lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
-  }, false);
-});
-
-// ---------------------------------------------------------------------------
 // Registro de Consumos - Lógica para grid
 // ---------------------------------------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
