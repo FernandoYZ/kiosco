@@ -10,33 +10,33 @@ import (
 	"time"
 )
 
-// RateLimitData almacena intentos fallidos y timestamp del último intento.
-type RateLimitData struct {
+// DatosRateLimit almacena intentos fallidos y timestamp del último intento.
+type DatosRateLimit struct {
 	Attempts    int
-	LastAttempt time.Time
+	UltimoIntento time.Time
 }
 
 var (
-	rateLimitMap = make(map[string]RateLimitData)
-	rateLimitMu  sync.Mutex
+	mapaRateLimit = make(map[string]DatosRateLimit)
+	muRateLimit  sync.Mutex
 
 	// Configuración de rate limiting
-	MaxAttemptsLogin = 5
-	WindowDuration   = 15 * time.Minute
+	MaxIntentosLogin = 5
+	VentanaDuracion   = 15 * time.Minute
 	IntervaloSweep   = 60 * time.Second
 )
 
 // limpiarExpirados elimina entradas expiradas del mapa de rate limit.
-// Debe llamarse con rateLimitMu tomado.
-func limpiarExpirados(ahora time.Time, m map[string]RateLimitData) {
+// Debe llamarse con muRateLimit tomado.
+func limpiarExpirados(ahora time.Time, m map[string]DatosRateLimit) {
 	for ip, data := range m {
-		if ahora.Sub(data.LastAttempt) > WindowDuration {
+		if ahora.Sub(data.UltimoIntento) > VentanaDuracion {
 			delete(m, ip)
 		}
 	}
 }
 
-// IniciarSweeper arranca la goroutine de limpieza activa del rateLimitMap.
+// IniciarSweeper arranca la goroutine de limpieza activa del mapaRateLimit.
 // Debe llamarse una vez desde main, pasando el context raíz para shutdown limpio.
 func IniciarSweeper(ctx context.Context) {
 	go func() {
@@ -45,9 +45,9 @@ func IniciarSweeper(ctx context.Context) {
 		for {
 			select {
 			case <-ticker.C:
-				rateLimitMu.Lock()
-				limpiarExpirados(time.Now(), rateLimitMap)
-				rateLimitMu.Unlock()
+				muRateLimit.Lock()
+				limpiarExpirados(time.Now(), mapaRateLimit)
+				muRateLimit.Unlock()
 			case <-ctx.Done():
 				return
 			}
@@ -59,18 +59,18 @@ func IniciarSweeper(ctx context.Context) {
 func incrementarIntentosLogin(r *http.Request) {
 	ip := obtenerIP(r)
 
-	rateLimitMu.Lock()
-	defer rateLimitMu.Unlock()
+	muRateLimit.Lock()
+	defer muRateLimit.Unlock()
 
 	ahora := time.Now()
 
 	// Incrementar intento para esta IP
-	if data, exists := rateLimitMap[ip]; exists {
+	if data, exists := mapaRateLimit[ip]; exists {
 		data.Attempts++
-		data.LastAttempt = ahora
-		rateLimitMap[ip] = data
+		data.UltimoIntento = ahora
+		mapaRateLimit[ip] = data
 	} else {
-		rateLimitMap[ip] = RateLimitData{Attempts: 1, LastAttempt: ahora}
+		mapaRateLimit[ip] = DatosRateLimit{Attempts: 1, UltimoIntento: ahora}
 	}
 }
 
@@ -78,17 +78,17 @@ func incrementarIntentosLogin(r *http.Request) {
 func verificarRateLimit(r *http.Request) bool {
 	ip := obtenerIP(r)
 
-	rateLimitMu.Lock()
-	defer rateLimitMu.Unlock()
+	muRateLimit.Lock()
+	defer muRateLimit.Unlock()
 
 	ahora := time.Now()
 
 	// Cleanup pasivo — única llamada por request path
-	limpiarExpirados(ahora, rateLimitMap)
+	limpiarExpirados(ahora, mapaRateLimit)
 
 	// Verificar si está bloqueada
-	if data, exists := rateLimitMap[ip]; exists {
-		if ahora.Sub(data.LastAttempt) <= WindowDuration && data.Attempts >= MaxAttemptsLogin {
+	if data, exists := mapaRateLimit[ip]; exists {
+		if ahora.Sub(data.UltimoIntento) <= VentanaDuracion && data.Attempts >= MaxIntentosLogin {
 			log.Printf("⚠️ Rate limit exceeded for IP %s (attempts: %d)", ip, data.Attempts)
 			return false // Bloqueada
 		}
@@ -101,10 +101,10 @@ func verificarRateLimit(r *http.Request) bool {
 func resetearRateLimitLogin(r *http.Request) {
 	ip := obtenerIP(r)
 
-	rateLimitMu.Lock()
-	defer rateLimitMu.Unlock()
+	muRateLimit.Lock()
+	defer muRateLimit.Unlock()
 
-	delete(rateLimitMap, ip)
+	delete(mapaRateLimit, ip)
 }
 
 // obtenerIP extrae la dirección IP del cliente del request.

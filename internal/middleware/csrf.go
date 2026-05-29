@@ -14,18 +14,17 @@ type contextKey string
 const CSRFTokenContextKey contextKey = "csrf_token"
 
 // InyectarCSRFToken obtiene o genera un token CSRF, lo coloca en cookie y en context.
-// Reutiliza el token existente si ya hay una cookie CSRF válida.
-// SECURITY AUDIT POINT: Log if new token generated vs reused (session tracking).
+// Reutiliza el token si ya existe una cookie CSRF válida.
 func InyectarCSRFToken(w http.ResponseWriter, r *http.Request) context.Context {
 	// Intentar obtener token existente de la cookie
 	cookie, err := r.Cookie(auth.CSRFCookieName)
 	var token string
 
 	if err == nil && cookie.Value != "" {
-		// Reutilizar token existente (session continues)
+		// Reutilizar token existente
 		token = cookie.Value
 	} else {
-		// Generar nuevo token solo si no existe (new session)
+		// Generar nuevo token si no existe cookie
 		token = auth.GenerarTokenCSRF()
 		log.Printf("🔐 CSRF token generated for new session from %s", r.RemoteAddr)
 	}
@@ -45,7 +44,7 @@ func InyectarCSRFToken(w http.ResponseWriter, r *http.Request) context.Context {
 
 // ValidarCSRF valida que el token en cookie coincida con el token en formulario o header.
 // Llamado por RequiereEdicion para validar POSTs antes de ejecutar handlers.
-// SECURITY AUDIT POINTS: Log all failures (missing cookie, missing token, mismatch).
+// Registrar todos los fallos (cookie faltante, token faltante, mismatch).
 func validarCSRF(r *http.Request) bool {
 	// Obtener token de cookie
 	cookieToken, err := r.Cookie(auth.CSRFCookieName)
