@@ -1,4 +1,4 @@
-.PHONY: help dev dev-static build build-quick build-prod build-linux run run-prod clean clean-full templ assets assets-css assets-js lint fmt test test-coverage db-wal db-verify docker-build docker-run info status
+.PHONY: help dev dev-static build build-quick build-prod build-linux run run-prod clean clean-full templ assets assets-css assets-js lint fmt test test-coverage db-wal db-verify info status setup verify
 .DEFAULT_GOAL := help
 
 # Variables
@@ -9,6 +9,7 @@ VERSION=$(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 BUILD_TIME=$(shell date -u '+%Y-%m-%d %H:%M:%S')
 GO_VERSION=$(shell go version | awk '{print $$3}')
 LDFLAGS=-X main.version=$(VERSION) -X 'main.buildTime=$(BUILD_TIME)'
+TAILWIND_VERSION=v4.1.10
 
 # Colors for output
 RED=\033[0;31m
@@ -29,6 +30,38 @@ help: ## Mostrar este mensaje de ayuda
 	@echo "  $(GREEN)make build$(NC)        # Compilar para producción"
 	@echo "  $(GREEN)make run$(NC)          # Ejecutar el binario compilado"
 	@echo "  $(GREEN)make clean$(NC)        # Limpiar artifacts"
+
+# ==================== SETUP ====================
+
+setup: ## Descargar binario tailwindcss (idempotente)
+	@if [ -f ./tailwindcss ]; then \
+		echo "$(GREEN)✓ tailwindcss already present$(NC)"; \
+	else \
+		echo "$(BLUE)⬇ Descargando tailwindcss $(TAILWIND_VERSION)...$(NC)"; \
+		curl -fsSL https://github.com/tailwindlabs/tailwindcss/releases/download/$(TAILWIND_VERSION)/tailwindcss-linux-x64 \
+			-o ./tailwindcss || { rm -f ./tailwindcss; exit 1; }; \
+		chmod +x ./tailwindcss; \
+		echo "$(GREEN)✓ tailwindcss instalado$(NC)"; \
+	fi
+
+verify: ## Verificar que todas las dependencias están instaladas
+	@MISSING=0; \
+	echo "$(BLUE)Verificando dependencias...$(NC)"; \
+	for tool in go templ curl; do \
+		if command -v $$tool >/dev/null 2>&1; then \
+			echo "  $(GREEN)[OK]$(NC) $$tool"; \
+		else \
+			echo "  $(RED)[MISSING]$(NC) $$tool"; \
+			MISSING=1; \
+		fi; \
+	done; \
+	if [ -f ./tailwindcss ]; then \
+		echo "  $(GREEN)[OK]$(NC) tailwindcss (local binary)"; \
+	else \
+		echo "  $(RED)[MISSING]$(NC) tailwindcss — run: make setup"; \
+		MISSING=1; \
+	fi; \
+	[ $$MISSING -eq 0 ]
 
 # ==================== DEVELOPMENT ====================
 
@@ -88,20 +121,30 @@ templ: ## Regenerar templates (templ generate)
 	@templ generate
 	@echo "$(GREEN)✓ Templates generados$(NC)"
 
-assets: ## Regenerar assets (CSS/JS con Bun)
+assets: ## Regenerar assets (CSS/JS)
+	@if [ ! -f ./tailwindcss ]; then \
+		echo "$(RED)❌ tailwindcss no encontrado — run: make setup$(NC)"; \
+		exit 1; \
+	fi
 	@echo "$(BLUE)🎨 Construyendo assets (CSS/JS)...$(NC)"
-	@command -v bun >/dev/null 2>&1 || { echo "$(RED)❌ Bun no instalado$(NC)"; exit 1; }
-	@bun start:static
+	@$(MAKE) assets-css
+	@$(MAKE) assets-js
 	@echo "$(GREEN)✓ Assets construidos$(NC)"
 
 assets-css: ## Solo construir CSS (Tailwind)
 	@echo "$(BLUE)🎨 Compilando CSS...$(NC)"
-	@bun css:build
+	@mkdir -p public/dist
+	@./tailwindcss -i ./assets/main.css -o ./public/dist/styles.css --minify
 	@echo "$(GREEN)✓ CSS compilado$(NC)"
 
 assets-js: ## Solo descargar/compilar JS
-	@echo "$(BLUE)🎨 Compilando JavaScript...$(NC)"
-	@bun js:alpine && bun js:htmx && bun js:canvas && bun js:collapse && bun js:build
+	@echo "$(BLUE)🎨 Descargando/copiando JavaScript...$(NC)"
+	@mkdir -p public/dist
+	@curl -fsSL https://cdn.jsdelivr.net/npm/alpinejs@3.15.4/dist/cdn.min.js -o public/dist/alpine.min.js
+	@curl -fsSL https://cdnjs.cloudflare.com/ajax/libs/htmx/2.0.7/htmx.min.js -o public/dist/htmx.min.js
+	@curl -fsSL https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.min.js -o public/dist/canvas.min.js
+	@curl -fsSL https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js -o public/dist/collapse.min.js
+	@cp assets/main.js public/dist/bundle.min.js
 	@echo "$(GREEN)✓ JavaScript compilado$(NC)"
 
 # ==================== CODE QUALITY ====================
@@ -135,10 +178,11 @@ clean: ## Limpiar artifacts (binario, coverage, etc)
 	@rm -f coverage.out coverage.html
 	@echo "$(GREEN)✓ Limpieza completada$(NC)"
 
-clean-full: clean ## Limpieza profunda (+ node_modules, dist)
+clean-full: clean ## Limpieza profunda (+ tailwindcss binary, node_modules, dist)
 	@echo "$(YELLOW)🗑 Limpieza profunda...$(NC)"
 	@rm -rf node_modules
 	@rm -rf public/dist/*
+	@rm -f ./tailwindcss
 	@echo "$(GREEN)✓ Limpieza profunda completada$(NC)"
 
 # ==================== DATABASE ====================
@@ -158,17 +202,6 @@ db-wal: ## Activar WAL mode en la DB de producción (LEER SETUP_WAL_PRODUCCION.m
 db-verify: ## Verificar integridad de la DB
 	@echo "$(BLUE)🔍 Verificando integridad de DB...$(NC)"
 	@sqlite3 database.db "PRAGMA integrity_check;" && echo "$(GREEN)✓ DB intacta$(NC)"
-
-# ==================== DOCKER (opcional) ====================
-
-docker-build: ## Construir imagen Docker
-	@echo "$(BLUE)🐳 Construyendo imagen Docker...$(NC)"
-	@docker build -t kiosco:$(VERSION) .
-	@echo "$(GREEN)✓ Imagen Docker construida$(NC)"
-
-docker-run: ## Ejecutar en Docker
-	@echo "$(BLUE)🐳 Ejecutando en Docker...$(NC)"
-	@docker run -p 3200:3200 kiosco:$(VERSION)
 
 # ==================== INFO ====================
 
@@ -194,7 +227,7 @@ status: ## Verificar estado del sistema
 	@echo "$(BLUE)=================$(NC)"
 	@echo -n "Go: "; go version
 	@echo -n "Templ: "; templ version 2>/dev/null || echo "no instalado"
-	@echo -n "Bun: "; bun --version 2>/dev/null || echo "no instalado"
+	@echo -n "TailwindCSS: "; ./tailwindcss --version 2>/dev/null || echo "no instalado (run: make setup)"
 	@echo -n "SQLite: "; sqlite3 --version 2>/dev/null || echo "no instalado"
 	@echo -n "Binario compilado: "
 	@if [ -f $(BINARY_PATH) ]; then echo "$(GREEN)sí$(NC)"; else echo "$(RED)no$(NC)"; fi

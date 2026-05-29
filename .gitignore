@@ -60,6 +60,7 @@ database/
 
 # Binarios del proyecto
 kiosco
+tailwindcss
 
 # Archivos temporales y de prueba
 prueba.html
