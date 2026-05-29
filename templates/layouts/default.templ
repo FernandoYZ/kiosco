@@ -57,6 +57,17 @@ templ Layout(titulo string) {
 				<script defer src="/dist/collapse.min.js"></script>
 				<script defer src="/dist/alpine.min.js"></script>
 
+				<!-- Service Worker registration (PWA) -->
+				<script>
+					if ('serviceWorker' in navigator) {
+						window.addEventListener('load', () => {
+							navigator.serviceWorker.register('/sw.js').catch((err) => {
+								console.warn('Service Worker no pudo registrarse:', err);
+							});
+						});
+					}
+				</script>
+
 			</body>
 		</html>
 }

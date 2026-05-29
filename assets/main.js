@@ -1,17 +1,6 @@
 // Kiosco Escolar - lógica del cliente
 
 // ---------------------------------------------------------------------------
-// Registro del Service Worker (PWA)
-// ---------------------------------------------------------------------------
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch((err) => {
-      console.warn('Service Worker no pudo registrarse:', err);
-    });
-  });
-}
-
-// ---------------------------------------------------------------------------
 // Copiar/descargar el comprobante como imagen PNG usando html-to-image
 // ---------------------------------------------------------------------------
 window.copiarComprobante = async function copiarComprobante(idElemento, nombreArchivo) {
@@ -217,8 +206,8 @@ function inicializarRegistroConsumos() {
       const pathParts = window.location.pathname.split('/');
       const base = pathParts[1]; // 'registro' | 'resumen'
       const sector = pathParts[2];
-      if (sector === 'menor' || sector === 'mayor') {
-        window.location = `/${base}/${sector}?fecha=${e.target.value}`;
+      if (pathParts.length > 2 && (sector === 'menor' || sector === 'mayor') && ['registro', 'resumen'].includes(base)) {
+        window.location = `/${base}/${sector}?fecha=${encodeURIComponent(e.target.value)}`;
       }
     });
   }
