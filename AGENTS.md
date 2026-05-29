@@ -1,16 +1,25 @@
 # Code Review Rules
 
 ## Go
-- Use explicit error handling
-- Prefer clear variable names
-- Keep functions focused and small
+- Error handling explícito
+- Variable names claros y descriptivos
+- Funciones pequeñas y enfocadas
+- Validación en boundaries (user input, external APIs)
 
 ## Templates (Templ)
-- Use components for reusable UI
-- Validate context availability
-- Keep templates focused on presentation
+- Componentes reutilizables para UI
+- Validar disponibilidad de contexto
+- Templates enfocados en presentación
 
 ## Middleware
-- Clear separation of concerns
-- Document auth/CSRF flows
-- Log security-relevant events
+- Separación clara de responsabilidades
+- Documentar flujos de auth/CSRF
+- Loguear eventos de seguridad
+- Validar CSRF token en POST
+
+## Security
+- HTTPS en producción
+- Argumenton2id para contraseñas (no plaintext)
+- CSRF protection en formularios POST
+- Rate limiting en login
+- No exponer detalles internos en errores

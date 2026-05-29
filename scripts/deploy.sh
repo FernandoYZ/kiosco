@@ -48,7 +48,7 @@ confirm() {
     local prompt="$1"
     local response
 
-    read -p "$(echo -e ${YELLOW}$prompt${NC}) (s/n): " response
+    read -p "$(echo -e "${YELLOW}${prompt}${NC}") (s/n): " response
     [[ "$response" == "s" ]] && return 0 || return 1
 }
 
@@ -68,15 +68,17 @@ check_dependencies() {
 check_vps_connectivity() {
     log "Verificando conectividad con VPS..."
 
-    if ! ssh -o ConnectTimeout=5 "$VPS_USER@$VPS_HOST" "test -d $VPS_PATH" 2>/dev/null; then
-        error "No se puede conectar a $VPS_USER@$VPS_HOST:$VPS_PATH"
-        error "Verifica:"
-        error "  - SSH keys configuradas (ssh-keygen -t ed25519)"
-        error "  - Host en ~/.ssh/config o variable VPS_HOST"
+    if ! ssh -o ConnectTimeout=5 "$VPS_HOST" "test -d $VPS_PATH" 2>/dev/null; then
+        error "No se puede conectar a $VPS_HOST:$VPS_PATH"
+        error "Verifica tu ~/.ssh/config tiene:"
+        error "  Host $VPS_HOST"
+        error "      HostName <ip-o-dominio>"
+        error "      User <usuario>"
+        error "      IdentityFile ~/.ssh/id_ed25519"
         exit 1
     fi
 
-    success "VPS conectado: $VPS_USER@$VPS_HOST"
+    success "VPS conectado: $VPS_HOST"
 }
 
 ################################################################################
@@ -100,10 +102,10 @@ COMANDOS:
 
 FLUJO RECOMENDADO:
 
-  1. make build:linux      # Compilar binario para Linux
+  1. make build-linux     # Compilar binario para Linux
   2. ./scripts/deploy.sh db:backup    # Backup de precaución
   3. ./scripts/deploy.sh binary:push  # Enviar binario
-  4. # Conectar a VPS y reiniciar: systemctl restart kiosco
+  4. ssh vps 'systemctl restart kiosco'  # Reiniciar servicio
 
 CONFIGURACIÓN SSH:
 
@@ -117,14 +119,13 @@ CONFIGURACIÓN SSH:
 
 VARIABLES DE ENTORNO:
 
-  VPS_HOST   Host SSH (default: vps)
-  VPS_USER   Usuario SSH (default: root)
+  VPS_HOST   Host SSH en ~/.ssh/config (default: vps)
 
 EJEMPLOS:
 
   ./scripts/deploy.sh db:backup
-  VPS_HOST=prod.example.com ./scripts/deploy.sh binary:push
-  VPS_USER=deploy ./scripts/deploy.sh status
+  VPS_HOST=prod ./scripts/deploy.sh binary:push
+  ./scripts/deploy.sh status
 
 EOF
 }
@@ -149,7 +150,7 @@ cmd_db_pull() {
     log "Trayendo database.db del VPS..."
     warning "Esto SOBRESCRIBIRÁ tu DB local"
 
-    if ! confirm "¿Estás seguro de traer la DB de $VPS_HOST?"; then
+    if ! confirm "¿Estás seguro de traer la DB del VPS ($VPS_HOST)?"; then
         log "Cancelado"
         return 0
     fi
@@ -164,7 +165,7 @@ cmd_db_pull() {
     fi
 
     log "Descargando DB..."
-    scp -P 22 "$VPS_USER@$VPS_HOST:$VPS_PATH/$DB_PATH" "$DB_PATH"
+    scp "$VPS_HOST:$VPS_PATH/$DB_PATH" "$DB_PATH"
 
     success "DB actualizada desde VPS"
     ls -lh "$DB_PATH"
@@ -181,7 +182,7 @@ cmd_db_push() {
 
     warning "⚠️  ALERTA: ESTO SOBRESCRIBIRÁ LA DB DE PRODUCCIÓN"
     warning "Asegúrate de:"
-    warning "  1. Haber hecho backup en VPS: ssh $VPS_USER@$VPS_HOST 'cp $VPS_PATH/$DB_PATH $VPS_PATH/$DB_PATH.backup'"
+    warning "  1. Haber hecho backup en VPS: ssh $VPS_HOST 'cp $VPS_PATH/$DB_PATH $VPS_PATH/$DB_PATH.backup'"
     warning "  2. Que esta DB sea correcta y completa"
     warning "  3. Que NO haya usuarios activos en el VPS"
 
@@ -198,15 +199,15 @@ cmd_db_push() {
     check_vps_connectivity
 
     log "Haciendo backup en VPS como precaución..."
-    ssh "$VPS_USER@$VPS_HOST" "cp $VPS_PATH/$DB_PATH $VPS_PATH/$DB_PATH.backup.$(date +%Y%m%d_%H%M%S)"
+    ssh "$VPS_HOST" "cp $VPS_PATH/$DB_PATH $VPS_PATH/$DB_PATH.backup.$(date +%Y%m%d_%H%M%S)"
 
     log "Enviando DB..."
-    scp -P 22 "$DB_PATH" "$VPS_USER@$VPS_HOST:$VPS_PATH/$DB_PATH"
+    scp "$DB_PATH" "$VPS_HOST:$VPS_PATH/$DB_PATH"
 
     success "DB enviada al VPS"
     audit "DB pushed to $VPS_HOST (backup creado automáticamente)"
 
-    warning "Próximo paso: ssh $VPS_USER@$VPS_HOST 'systemctl restart kiosco'"
+    warning "Próximo paso: ssh $VPS_HOST 'systemctl restart kiosco'"
 }
 
 cmd_binary_push() {
@@ -214,7 +215,7 @@ cmd_binary_push() {
 
     if [ ! -f "$BINARY_PATH" ]; then
         error "Binario no encontrado: $BINARY_PATH"
-        error "Compila primero: make build:linux"
+        error "Compila primero: make build-linux"
         exit 1
     fi
 
@@ -229,20 +230,20 @@ cmd_binary_push() {
     check_vps_connectivity
 
     log "Haciendo backup del binario anterior en VPS..."
-    ssh "$VPS_USER@$VPS_HOST" "test -f $VPS_PATH/kiosco && cp $VPS_PATH/kiosco $VPS_PATH/kiosco.backup.$(date +%Y%m%d_%H%M%S) || true"
+    ssh "$VPS_HOST" "test -f $VPS_PATH/kiosco && cp $VPS_PATH/kiosco $VPS_PATH/kiosco.backup.$(date +%Y%m%d_%H%M%S) || true"
 
     log "Enviando binario..."
-    scp -P 22 "$BINARY_PATH" "$VPS_USER@$VPS_HOST:$VPS_PATH/kiosco"
+    scp "$BINARY_PATH" "$VPS_HOST:$VPS_PATH/kiosco"
 
     log "Haciendo ejecutable..."
-    ssh "$VPS_USER@$VPS_HOST" "chmod +x $VPS_PATH/kiosco"
+    ssh "$VPS_HOST" "chmod +x $VPS_PATH/kiosco"
 
     success "Binario enviado y configurado"
     audit "Binary pushed to $VPS_HOST (backup: kiosco.backup.*)"
 
     log ""
-    log "$(echo -e ${YELLOW}Próximos pasos:${NC})"
-    echo "  1. ssh $VPS_USER@$VPS_HOST"
+    log "$(echo -e "${YELLOW}Próximos pasos:${NC}")"
+    echo "  1. ssh $VPS_HOST"
     echo "  2. systemctl stop kiosco"
     echo "  3. systemctl start kiosco"
     echo "  4. systemctl status kiosco"
@@ -254,7 +255,7 @@ cmd_status() {
     check_vps_connectivity
 
     log "Información del VPS:"
-    ssh "$VPS_USER@$VPS_HOST" << 'EOSSH'
+    ssh "$VPS_HOST" << 'EOSSH'
         echo "  Versión del binario:"
         /opt/kiosco/kiosco --version 2>/dev/null || echo "    (no disponible)"
         echo ""
