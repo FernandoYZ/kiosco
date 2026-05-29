@@ -15,8 +15,8 @@ func ConfigurarRutas(controlador *controllers.Controlador) http.Handler {
 	config.RegistrarEstaticos(mux)
 
 	// Rutas públicas
-	mux.HandleFunc("GET /login", controlador.MostrarLogin)
-	mux.HandleFunc("POST /login", controlador.ProcesarLogin)
+	mux.HandleFunc("GET /login", middleware.ProtegerLogin(controlador.MostrarLogin))
+	mux.HandleFunc("POST /login", middleware.ProtegerLogin(controlador.ProcesarLogin))
 	mux.HandleFunc("GET /logout", controlador.Logout)
 
 	// Atajos para proteger HandlerFunc
@@ -42,9 +42,9 @@ func ConfigurarRutas(controlador *controllers.Controlador) http.Handler {
 	// Gestión de productos — solo lectura para usuarios sin edición
 	// GET es accesible a todos, POST requiere edición
 	mux.HandleFunc("GET /setup/productos", proteger(controlador.SetupProductos))
-	mux.HandleFunc("POST /setup/producto", proteger(controlador.AgregarProducto))
-	mux.HandleFunc("POST /setup/producto/actualizar", proteger(controlador.ActualizarProducto))
-	mux.HandleFunc("POST /setup/producto/toggle", proteger(controlador.ToggleProducto))
+	mux.HandleFunc("POST /setup/producto", protegerEdicion(controlador.AgregarProducto))
+	mux.HandleFunc("POST /setup/producto/actualizar", protegerEdicion(controlador.ActualizarProducto))
+	mux.HandleFunc("POST /setup/producto/toggle", protegerEdicion(controlador.ToggleProducto))
 
 	// Registro de consumos por sector — accesible a todos
 	mux.HandleFunc("GET /registro", proteger(controlador.RegistroConsumos))
