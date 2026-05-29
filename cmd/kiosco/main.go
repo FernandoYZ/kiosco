@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"kiosco/internal/auth"
 	"kiosco/internal/config"
 	"kiosco/internal/controllers"
+	"kiosco/internal/middleware"
 	"kiosco/internal/router"
 	"log"
 	"net/http"
@@ -27,6 +29,11 @@ func main() {
 
 	// Configurar rutas y archivos estáticos
 	mux := router.ConfigurarRutas(controlador)
+
+	// Iniciar sweeper de rate limit con context cancelable para shutdown limpio
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	middleware.IniciarSweeper(ctx)
 
 	// Iniciar servidor
 	direccionServidor := config.ObtenerDireccion()

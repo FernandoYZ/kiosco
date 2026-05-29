@@ -2,6 +2,10 @@ package middleware
 
 import "net/http"
 
+// LimiteConcurrenciaDefault es el número máximo de requests HTTP concurrentes
+// permitidos antes de retornar HTTP 503. Ajustar según capacidad del hardware.
+const LimiteConcurrenciaDefault = 50
+
 // LimitarConcurrencia crea un middleware que limita el número de conexiones HTTP
 // concurrentes usando un canal buffered (semáforo). Las requests que excedan el
 // límite reciben HTTP 503 Service Unavailable inmediatamente.

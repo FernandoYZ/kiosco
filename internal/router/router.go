@@ -8,7 +8,7 @@ import (
 )
 
 // ConfigurarRutas registra todas las rutas y archivos estáticos, devuelve el mux.
-func ConfigurarRutas(controlador *controllers.Controlador) *http.ServeMux {
+func ConfigurarRutas(controlador *controllers.Controlador) http.Handler {
 	mux := http.NewServeMux()
 
 	// Archivos estáticos embebidos (públicos, sin auth)
@@ -55,5 +55,5 @@ func ConfigurarRutas(controlador *controllers.Controlador) *http.ServeMux {
 	mux.HandleFunc("GET /resumen/menor", proteger(controlador.ResumenSector))
 	mux.HandleFunc("GET /resumen/mayor", proteger(controlador.ResumenSector))
 
-	return mux
+	return middleware.LimitarConcurrencia(middleware.LimiteConcurrenciaDefault)(mux)
 }

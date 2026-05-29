@@ -51,10 +51,8 @@ func (m *Controlador) MostrarLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Mostrar login normal
-	// Inyectar token CSRF para formulario
-	ctx := middleware.InyectarCSRFToken(w, r)
-
-	if err := pages.Login("").Render(ctx, w); err != nil {
+	// El token CSRF ya viene inyectado por ProtegerLogin
+	if err := pages.Login("").Render(r.Context(), w); err != nil {
 		log.Printf("Error renderizando login: %v", err)
 	}
 }
@@ -71,7 +69,9 @@ func (m *Controlador) ProcesarLogin(w http.ResponseWriter, r *http.Request) {
 		// Inyectar token CSRF para re-renderizar formulario
 		ctx := middleware.InyectarCSRFToken(w, r)
 		// Mismo mensaje para no revelar si el usuario existe o no
-		pages.Login("Usuario o contraseña incorrectos").Render(ctx, w)
+		if err := pages.Login("Usuario o contraseña incorrectos").Render(ctx, w); err != nil {
+			log.Printf("Error renderizando login: %v", err)
+		}
 		return
 	}
 

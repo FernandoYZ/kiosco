@@ -1,6 +1,8 @@
 package middleware
 
 import (
+	"context"
+	"log"
 	"net"
 	"net/http"
 	"strings"
@@ -21,6 +23,7 @@ var (
 	// Configuración de rate limiting
 	MaxAttemptsLogin = 5
 	WindowDuration   = 15 * time.Minute
+	IntervaloSweep   = 60 * time.Second
 )
 
 // limpiarExpirados elimina entradas expiradas del mapa de rate limit.
@@ -31,6 +34,25 @@ func limpiarExpirados(ahora time.Time, m map[string]RateLimitData) {
 			delete(m, ip)
 		}
 	}
+}
+
+// IniciarSweeper arranca la goroutine de limpieza activa del rateLimitMap.
+// Debe llamarse una vez desde main, pasando el context raíz para shutdown limpio.
+func IniciarSweeper(ctx context.Context) {
+	go func() {
+		ticker := time.NewTicker(IntervaloSweep)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				rateLimitMu.Lock()
+				limpiarExpirados(time.Now(), rateLimitMap)
+				rateLimitMu.Unlock()
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
 }
 
 // incrementarIntentosLogin incrementa el contador de intentos fallidos para una IP.
@@ -67,6 +89,7 @@ func verificarRateLimit(r *http.Request) bool {
 	// Verificar si está bloqueada
 	if data, exists := rateLimitMap[ip]; exists {
 		if ahora.Sub(data.LastAttempt) <= WindowDuration && data.Attempts >= MaxAttemptsLogin {
+			log.Printf("⚠️ Rate limit exceeded for IP %s (attempts: %d)", ip, data.Attempts)
 			return false // Bloqueada
 		}
 	}

@@ -77,20 +77,14 @@ func RequiereEdicion(next http.Handler) http.Handler {
 				return
 			}
 			if !validarCSRF(r) {
-				log.Printf("⚠️ CSRF validation failed on POST from %s on %s", r.RemoteAddr, r.URL.Path)
 				http.Error(w, "CSRF token invalid", http.StatusForbidden)
 				return
 			}
-			// Inyectar token en contexto para que templates re-renderizadas puedan accederlo
-			ctx := InyectarCSRFToken(w, r)
-			r = r.WithContext(ctx)
 		}
 
-		// Inyectar token CSRF en context para GETs
-		if r.Method == "GET" {
-			ctx := InyectarCSRFToken(w, r)
-			r = r.WithContext(ctx)
-		}
+		// Inyectar token CSRF una sola vez (aplica a GET y POST)
+		ctx := InyectarCSRFToken(w, r)
+		r = r.WithContext(ctx)
 
 		next.ServeHTTP(w, r)
 	})
