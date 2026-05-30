@@ -10,20 +10,20 @@ import (
 templ VerConsumoSemanal(datos models.DatosConsumoSemanal) {
 	@layouts.Layout("Comprobante - " + datos.NombreEstudiante) {
 		<div class="max-w-2xl mx-auto p-2 sm:p-4">
-			<!-- Botones de acción -->
-			<div class="mb-2 flex justify-between items-center">
+			<!-- Botones de acción (Apple-like) -->
+			<div class="mb-4 flex justify-between items-center gap-3">
 				<a
 					href={ templ.URL("/?fecha=" + utils.FormatearFechaCompleta(datos.FechaInicio) + "&grado=" + fmt.Sprintf("%d", datos.GradoSeleccionado)) }
-					class="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50"
+					class="px-4 py-2.5 text-sm font-medium text-gray-700 bg-white/70 backdrop-blur-md border border-gray-200/50 rounded-lg hover:bg-white/90 active:scale-95 transition-all duration-150 shadow-sm"
 				>← Volver</a>
 				<button
 					x-data="comprobante()"
 					@click="copiar('comprobante', $el.dataset.filename)"
 					:disabled="isLoading"
 					data-filename={ "nota-venta-" + datos.NombreEstudiante + ".png" }
-					class="px-3 py-1.5 text-xs font-medium text-white bg-gray-800 border border-transparent rounded hover:bg-gray-900 flex items-center gap-1 disabled:opacity-60 disabled:cursor-not-allowed"
+					class="px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-b from-blue-500 to-blue-600 border border-blue-700/20 rounded-lg hover:from-blue-600 hover:to-blue-700 active:scale-95 transition-all duration-150 shadow-md flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100"
 				>
-					<span x-text="estado || '📋 Copiar como imagen'"></span>
+					<span x-text="estado || '📋 Copiar'"></span>
 				</button>
 			</div>
 
