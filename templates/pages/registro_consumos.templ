@@ -21,10 +21,10 @@ templ RegistroConsumos() {
 }
 
 // Página completa: layout + grid de registro
-templ RegistroConsumosCon(sector string, fechas []models.DiaFecha, fechaActual string, estudiantes []models.Estudiante, productos []models.Producto) {
+templ RegistroConsumosCon(sector string, fechas []models.DiaFecha, fechaActual string, estudiantes []models.Estudiante, productos []models.Producto, grados []string) {
 	@layouts.Layout("Registro de Consumos") {
 		<div id="registro-main" class="bg-[#F2F2F7] min-h-screen text-[#000000]">
-			@RegistroGrid(sector, fechas, fechaActual, estudiantes, productos)
+			@RegistroGrid(sector, fechas, fechaActual, estudiantes, productos, grados)
 		</div>
 
 		<style>

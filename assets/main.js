@@ -4,6 +4,43 @@
 // Alpine.data('comprobante') — copiar/descargar el comprobante como imagen PNG
 // ---------------------------------------------------------------------------
 document.addEventListener('alpine:init', () => {
+  // ---------------------------------------------------------------------------
+  // Alpine.data('filtro') — filtro de estudiantes por grado y búsqueda
+  // ---------------------------------------------------------------------------
+  Alpine.data('filtro', (gradosData) => ({
+    grado: 'Todos',
+    search: '',
+    visibles: 0,
+    grados: gradosData,
+
+    init() {
+      this.$nextTick(() => this.contarVisibles());
+    },
+
+    matchFila(el) {
+      const gradoEl = el.dataset.grado || '';
+      const nombreEl = (el.dataset.nombre || '').toLowerCase();
+      const matchGrado = this.grado === 'Todos' || gradoEl === this.grado;
+      const matchSearch = this.search === '' || nombreEl.includes(this.search.toLowerCase());
+      return matchGrado && matchSearch;
+    },
+
+    contarVisibles() {
+      this.$nextTick(() => {
+        const filas = this.$el.querySelectorAll('#estudiantes-container .estudiante-fila');
+        let count = 0;
+        filas.forEach(fila => {
+          const gradoEl = fila.dataset.grado || '';
+          const nombreEl = (fila.dataset.nombre || '').toLowerCase();
+          const matchGrado = this.grado === 'Todos' || gradoEl === this.grado;
+          const matchSearch = this.search === '' || nombreEl.includes(this.search.toLowerCase());
+          if (matchGrado && matchSearch) count++;
+        });
+        this.visibles = count;
+      });
+    },
+  }));
+
   Alpine.data('comprobante', () => ({
     estado: '',
     isLoading: false,
