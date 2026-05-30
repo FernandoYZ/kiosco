@@ -17,13 +17,13 @@ templ VerConsumoSemanal(datos models.DatosConsumoSemanal) {
 					class="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50"
 				>← Volver</a>
 				<button
-			        id="btnCopiar"
-			        data-filename={ "nota-venta-" + datos.NombreEstudiante + ".png" }
-		        onclick="copiarComprobante('comprobante', this.dataset.filename)"
-			        class="px-3 py-1.5 text-xs font-medium text-white bg-gray-800 border border-transparent rounded hover:bg-gray-900 flex items-center gap-1"
+					x-data="comprobante()"
+					@click="copiar('comprobante', $el.dataset.filename)"
+					:disabled="isLoading"
+					data-filename={ "nota-venta-" + datos.NombreEstudiante + ".png" }
+					class="px-3 py-1.5 text-xs font-medium text-white bg-gray-800 border border-transparent rounded hover:bg-gray-900 flex items-center gap-1 disabled:opacity-60 disabled:cursor-not-allowed"
 				>
-					<span id="iconoCopiar">📋</span>
-					<span id="textoCopiar">Copiar como imagen</span>
+					<span x-text="estado || '📋 Copiar como imagen'"></span>
 				</button>
 			</div>
 
