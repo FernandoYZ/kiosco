@@ -1,4 +1,4 @@
-# Kiosco - Sistema de Control de Consumo Escolar
+# Kiosco - Sistema de Control de Consumo Escolar - Legacy
 
 Sistema web ligero y eficiente para gestionar consumos, pagos y deudas de estudiantes en kioscos escolares. Construido con **Go** y **SQLite** embebido: sin dependencias externas pesadas, sin Docker, un solo binario autocontenido.
 
